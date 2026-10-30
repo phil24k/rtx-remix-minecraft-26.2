@@ -1,4 +1,6 @@
-accessWidener	v2	official
+accessWidener v2 official
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
 accessible	class	net/minecraft/client/renderer/texture/SpriteContents$AnimatedTexture
 accessible	class	net/minecraft/client/renderer/texture/SpriteContents$FrameInfo
 accessible	field	net/minecraft/client/renderer/texture/SpriteContents	animatedTexture	Lnet/minecraft/client/renderer/texture/SpriteContents$AnimatedTexture;

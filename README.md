@@ -128,6 +128,12 @@ agent instructions, and Prism tooling may still describe upstream Minecraft
 1.21.1 or the community 26.3 branch; they do not expand the supported version
 of this build.
 
+## Contributing
+
+Follow [CONTRIBUTING.md](CONTRIBUTING.md). Contributions use the
+[Developer Certificate of Origin](https://developercertificate.org/);
+sign commits with `git commit -s`.
+
 ## License and attribution
 
 The mod source is Apache-2.0. See LICENSE, NOTICE, and THIRD_PARTY_NOTICES.md.
