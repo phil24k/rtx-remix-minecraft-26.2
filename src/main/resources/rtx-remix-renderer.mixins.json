@@ -41,6 +41,7 @@
         "RenderTypeFeatureRendererMixin",
         "SectionBuilderMixin",
         "SkyRendererStarsMixin",
+        "SplashManagerMixin",
         "SpriteAtlasAccessor",
         "SpriteAtlasTextureMixin",
         "SpriteContentsAccessor",

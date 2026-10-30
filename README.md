@@ -4,11 +4,20 @@ A Windows x64 Fabric port of NVIDIA's Minecraft RTX Remix beta to Minecraft Java
 It uses NVIDIA's RTX Remix runtime for path tracing, DLSS, and reflections.
 
 This is an unofficial community port. NVIDIA does not maintain or support it.
-The source is based on NVIDIA's 0.1.0 release and the Apache-2.0 community
-26.3 port by yeezybeezydeezy, commit d0bde279ddd021ab59c5c26c40770d39422fa985:
+The original project is **[NVIDIA RTX Remix for Minecraft](https://github.com/NVIDIAGameWorks/rtx-remix-minecraft)**.
+NVIDIA developed the original mod, JNI bridge, and native rendering runtime.
 
-- https://github.com/NVIDIAGameWorks/rtx-remix-minecraft
-- https://github.com/yeezybeezydeezy/rtx-remix-minecraft/tree/port/26.3
+This 26.2 fork adapts the Apache-2.0 community 26.3 port by
+[yeezybeezydeezy](https://github.com/yeezybeezydeezy/rtx-remix-minecraft/tree/port/26.3),
+starting at commit d0bde279ddd021ab59c5c26c40770d39422fa985. Phil24k's fork
+contains the subsequent 26.2 integration and atlas-padding changes.
+
+The provenance is NVIDIA -> community 26.3 port -> Phil24k 26.2 fork.
+GitHub displays the community repository as the immediate fork parent and
+identifies NVIDIA's repository as the original source of the fork network.
+The local `upstream` remote points to NVIDIA; `community` points to the 26.3 port.
+
+The title-screen splash reads **RTX REMIX FORKED BY Phil24k!**.
 
 ## Validation
 
@@ -93,7 +102,7 @@ runtime junctions. Normal Gradle tasks acquire the separate runtime textures.
 The unit suite uses Fabric Loader JUnit so Minecraft classes receive their
 real mixin transformations. Tests cover chunk and material processing,
 geometry capture, lighting configuration, persistence, camera paths, and the
-48 configured mixin targets, including actual class transformation.
+49 configured mixin targets, including actual class transformation.
 Automated tests do not establish visual parity in a running world.
 
 ## Port changes
@@ -110,9 +119,9 @@ Automated tests do not establish visual parity in a running world.
 This remains experimental. The 26.3 source port's held-glass/ice material
 limitation has not been addressed, and visual testing is needed for all
 worlds, dimensions, resource packs, and third-party mod combinations. A distant
-block-edge grid has been reported with a server-provided Nexo resource pack;
-the atlas-padding patch is included, but that server-specific issue is not
-confirmed resolved.
+block-edge grid has been reported only on certain servers, including Mystic
+Craft with its server-provided Nexo resource pack. The atlas-padding patch is
+included; that server-specific interaction has not been investigated further.
 
 ## Repository contents
 

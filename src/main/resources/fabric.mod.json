@@ -5,12 +5,14 @@
     "name": "RTX Remix for Minecraft 26.2 (Unofficial)",
     "description": "Renders Minecraft through NVIDIA RTX Remix path tracing. NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.",
     "authors": [
-        "NVIDIA"
+        "NVIDIA (original mod and renderer)",
+        "yeezybeezydeezy (community 26.3 port)",
+        "Phil24k (26.2 fork)"
     ],
     "contact": {
-        "homepage": "https://github.com/NVIDIAGameWorks/rtx-remix-minecraft",
-        "sources": "https://github.com/NVIDIAGameWorks/rtx-remix-minecraft",
-        "issues": "https://github.com/NVIDIAGameWorks/rtx-remix-minecraft/issues"
+        "homepage": "https://github.com/phil24k/rtx-remix-minecraft-26.2",
+        "sources": "https://github.com/phil24k/rtx-remix-minecraft-26.2",
+        "issues": "https://github.com/phil24k/rtx-remix-minecraft-26.2/issues"
     },
     "license": "Apache-2.0",
     "environment": "*",
