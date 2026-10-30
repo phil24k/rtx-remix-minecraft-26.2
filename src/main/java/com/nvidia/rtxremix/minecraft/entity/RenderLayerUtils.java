@@ -95,7 +95,7 @@ final class RenderLayerUtils {
 
     private static Optional<Identifier> capturableTextureUncached(RenderType layer) {
         DepthStencilState depth = layer.pipeline().getDepthStencilState();
-        if (depth != null && depth.depthTest() == CompareOp.ALWAYS_PASS) {
+        if (depth == null || depth.depthTest() == CompareOp.ALWAYS_PASS) {
             return Optional.empty();
         }
         return extractTexture(layer);

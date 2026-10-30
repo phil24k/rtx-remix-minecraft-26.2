@@ -218,6 +218,23 @@ test {
     systemProperty 'rtxremix.chunk.maxInstalledColumnsPerFrame', '8'
 }
 
+// Optional real OpenGL checks run separately from the headless JVM suite.
+sourceSets {
+    gpuTest {
+        compileClasspath += sourceSets.test.compileClasspath + sourceSets.main.output
+        runtimeClasspath += sourceSets.test.runtimeClasspath + sourceSets.main.output
+    }
+}
+
+tasks.register('gpuTest', Test) {
+    description = 'Runs OpenGL integration regressions on a machine with OpenGL 4.5.'
+    group = 'verification'
+    testClassesDirs = sourceSets.gpuTest.output.classesDirs
+    classpath = sourceSets.gpuTest.runtimeClasspath
+    useJUnitPlatform()
+    systemProperty 'fabric.side', 'client'
+}
+
 def gitBranch = providers.exec { commandLine 'git', 'rev-parse', '--abbrev-ref', 'HEAD' }
         .standardOutput.asText.map { it.trim() }
 

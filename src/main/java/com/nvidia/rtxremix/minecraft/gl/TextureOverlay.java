@@ -34,7 +34,7 @@ public class TextureOverlay {
     private final Minecraft client;
     /** A framebuffer over the main target's colour texture, rebuilt when that texture changes. */
     private int targetFramebuffer;
-    private int targetTexture;
+    private GlTexture targetTexture;
 
     public TextureOverlay() {
         this.client = Minecraft.getInstance();
@@ -69,23 +69,28 @@ public class TextureOverlay {
             return;
         }
 
-        int textureId = glTexture.glId();
-        if (targetFramebuffer == 0 || targetTexture != textureId) {
+        int framebuffer = framebufferFor(glTexture);
+        GlStateManager._disableScissorTest();
+        interop.blitColorTo(framebuffer, mainTarget.width, mainTarget.height);
+    }
+
+    private int framebufferFor(GlTexture glTexture) {
+        // Texture names can be reused after a resize while an FBO still retains the
+        // deleted texture. The new Java texture object identifies the replacement.
+        if (targetFramebuffer == 0 || targetTexture != glTexture) {
             releaseFramebuffer();
             targetFramebuffer = glCreateFramebuffers();
-            glNamedFramebufferTexture(targetFramebuffer, GL_COLOR_ATTACHMENT0, textureId, 0);
-            targetTexture = textureId;
+            glNamedFramebufferTexture(targetFramebuffer, GL_COLOR_ATTACHMENT0, glTexture.glId(), 0);
+            targetTexture = glTexture;
         }
-
-        GlStateManager._disableScissorTest();
-        interop.blitColorTo(targetFramebuffer, mainTarget.width, mainTarget.height);
+        return targetFramebuffer;
     }
 
     private void releaseFramebuffer() {
         if (targetFramebuffer != 0) {
             glDeleteFramebuffers(targetFramebuffer);
             targetFramebuffer = 0;
-            targetTexture = 0;
+            targetTexture = null;
         }
     }
 

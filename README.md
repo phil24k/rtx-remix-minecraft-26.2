@@ -21,10 +21,12 @@ The title-screen splash reads **RTX REMIX FORKED BY Phil24k!**.
 
 ## Validation
 
-The local Windows x64 build passes all 748 automated tests with no skips.
+The local Windows x64 build passes all 751 automated tests with no skips.
 A Windows x64 launch through Lunar was verified: the native renderer
 initialized and imported its color/depth interop images.
-Visual parity and a full playthrough have not been verified.
+A separate real OpenGL pixel-readback regression passes for resized render
+targets whose texture names are reused. Live F11 switching, server labels,
+visual parity, and a full playthrough still need in-game confirmation.
 
 ## Requirements
 
@@ -105,6 +107,16 @@ geometry capture, lighting configuration, persistence, camera paths, and the
 49 configured mixin targets, including actual class transformation.
 Automated tests do not establish visual parity in a running world.
 
+To run the optional OpenGL regression on a machine with OpenGL 4.5:
+
+```powershell
+.\gradlew.bat gpuTest -Parch=win64 -x compileNativeWin64
+```
+
+This hidden-window test checks actual framebuffer pixels after a texture is
+replaced under the same OpenGL name. It runs separately from the headless
+suite so build servers do not require a graphics driver.
+
 ## Port changes
 
 - Target 26.2, Java 25, and matching Fabric dependencies throughout packaging.
@@ -115,6 +127,11 @@ Automated tests do not establish visual parity in a running world.
 - Update closed dynamic-texture detection for 26.2's retained image objects.
 - Extrude atlas gutters for static and animated textures/material maps to address black mip borders.
 - Restore the inherited test suite and verify injection targets against 26.2.
+- Replay 26.2's separate name-tag feature pass, including named-entity holograms.
+- Keep standalone see-through text displays visible as depth-tested scene geometry;
+  they currently do not reproduce vanilla's through-wall overlay behavior.
+- Reattach the compositor framebuffer when the render target object changes,
+  including when OpenGL reuses its numeric texture name after a resize.
 
 This remains experimental. The 26.3 source port's held-glass/ice material
 limitation has not been addressed, and visual testing is needed for all

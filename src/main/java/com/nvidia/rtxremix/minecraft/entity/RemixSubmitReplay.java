@@ -8,6 +8,7 @@ import com.nvidia.rtxremix.minecraft.mixin.RenderTypeFeatureRendererAccessor;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.feature.BlockModelFeatureRenderer;
@@ -20,6 +21,7 @@ import net.minecraft.client.renderer.feature.FlameFeatureRenderer;
 import net.minecraft.client.renderer.feature.ItemFeatureRenderer;
 import net.minecraft.client.renderer.feature.LeashFeatureRenderer;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.feature.NameTagFeatureRenderer;
 import net.minecraft.client.renderer.feature.MovingBlockFeatureRenderer;
 import net.minecraft.client.renderer.feature.TextFeatureRenderer;
 import net.minecraft.client.renderer.feature.submit.SubmitNode;
@@ -51,6 +53,7 @@ public final class RemixSubmitReplay {
         renderers.put(FlameFeatureRenderer.TYPE, new FlameFeatureRenderer());
         renderers.put(ModelFeatureRenderer.TYPE, new ModelFeatureRenderer());
         renderers.put(TextFeatureRenderer.TYPE, new TextFeatureRenderer());
+        renderers.put(NameTagFeatureRenderer.TYPE, new NameTagFeatureRenderer());
         renderers.put(LeashFeatureRenderer.TYPE, new LeashFeatureRenderer());
         renderers.put(ItemFeatureRenderer.TYPE, new ItemFeatureRenderer());
         renderers.put(CustomFeatureRenderer.TYPE, new CustomFeatureRenderer());
@@ -96,6 +99,20 @@ public final class RemixSubmitReplay {
             return;
         }
         try {
+            if (type == TextFeatureRenderer.TYPE) {
+                // A text display can submit only a see-through copy, unlike name tags
+                // which also submit depth-tested ink. Give that text a physical surface
+                // instead of losing it when capture discards always-pass layers.
+                for (int i = 0; i < group.size(); i++) {
+                    TextFeatureRenderer.Submit text = (TextFeatureRenderer.Submit) group.get(i);
+                    if (text.displayMode() == Font.DisplayMode.SEE_THROUGH) {
+                        group.set(i, new TextFeatureRenderer.Submit(
+                                text.pose(), text.x(), text.y(), text.string(), text.dropShadow(),
+                                Font.DisplayMode.NORMAL, text.lightCoords(), text.color(),
+                                text.backgroundColor(), text.outlineColor()));
+                    }
+                }
+            }
             FeatureRenderer<?> renderer = renderers.get(type);
             if (renderer instanceof RenderTypeFeatureRendererAccessor builder) {
                 builder.rtxremix$buildGroup(context, group);
