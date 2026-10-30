@@ -169,3 +169,10 @@ bridge compiles its inline helpers into
 - Vendored copy of the NVIDIA Packman package-management bootstrap; used only
   to fetch the RTX Remix runtime payload at development/build time.
 
+
+## Community Minecraft port source
+
+The Minecraft 26.2 integration adapts the Apache-2.0 Minecraft 26.3 community
+port by yeezybeezydeezy (commit d0bde279ddd021ab59c5c26c40770d39422fa985).
+Source: https://github.com/yeezybeezydeezy/rtx-remix-minecraft/tree/port/26.3
+The original NVIDIA copyright and license notices are retained.

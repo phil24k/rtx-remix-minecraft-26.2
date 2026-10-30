@@ -59,8 +59,8 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.FogType;
 import net.minecraft.world.phys.Vec3;
-import org.lwjgl.sdl.SDLProperties;
-import org.lwjgl.sdl.SDLVideo;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWNativeWin32;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
 import org.slf4j.Logger;
@@ -74,9 +74,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import net.minecraft.client.renderer.FirstPersonHandsAndItemsRenderer;
-import net.minecraft.client.renderer.state.level.FirstPersonHandsAndItemsRenderState;
-import net.minecraft.client.renderer.state.level.PlayerRenderState;
+import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.state.level.BlockOutlineRenderState;
 
 /**
@@ -230,9 +228,9 @@ public class RemixRenderer {
             lastCameraMediumHandle = Long.MIN_VALUE;
 
             Minecraft client = Minecraft.getInstance();
-            long sdlWindow = client.getWindow().handle();
+            long glfwWindow = client.getWindow().handle();
 
-            windowHandle = getHwndFromSdl(sdlWindow);
+            windowHandle = GLFWNativeWin32.glfwGetWin32Window(glfwWindow);
             
             if (windowHandle == 0) {
                 throw new RuntimeException("Failed to get native window handle");
@@ -283,7 +281,7 @@ public class RemixRenderer {
                 try {
                     int x = Integer.parseInt(parts[0].trim());
                     int y = Integer.parseInt(parts[1].trim());
-                    SDLVideo.SDL_SetWindowPosition(sdlWindow, x, y);
+                    GLFW.glfwSetWindowPos(glfwWindow, x, y);
                     LOGGER.info("RTXREMIX_WINDOW_POS: moved window to ({}, {})", x, y);
                 } catch (RuntimeException e) {
                     LOGGER.warn("RTXREMIX_WINDOW_POS: could not apply '{}': {}", windowPos, e.getMessage());
@@ -498,14 +496,6 @@ public class RemixRenderer {
         }
     }
     
-    /**
-     * Gets the Win32 HWND from an SDL window handle.
-     */
-    private long getHwndFromSdl(long sdlWindow) {
-        int properties = SDLVideo.SDL_GetWindowProperties(sdlWindow);
-        return SDLProperties.SDL_GetPointerProperty(
-                properties, SDLVideo.SDL_PROP_WINDOW_WIN32_HWND_POINTER, 0L);
-    }
     
     /**
      * The single location of the RTX Remix runtime. The extractor installs the
@@ -1696,13 +1686,13 @@ public class RemixRenderer {
     }
 
     public void captureFirstPersonModel(
-            FirstPersonHandsAndItemsRenderer handsRenderer,
+            ItemInHandRenderer handsRenderer,
             float tickDelta,
             PoseStack matrices,
-            PlayerRenderState playerState,
-            FirstPersonHandsAndItemsRenderState handsState) {
+            LocalPlayer player,
+            int light) {
         if (firstPersonPass != null && initialized && RtxRemixMod.isRtxEnabled()) {
-            firstPersonPass.capture(handsRenderer, tickDelta, matrices, playerState, handsState);
+            firstPersonPass.capture(handsRenderer, tickDelta, matrices, player, light);
         }
     }
 }

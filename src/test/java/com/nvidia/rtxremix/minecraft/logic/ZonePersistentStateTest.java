@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import ZonePersistentState;
+import com.nvidia.rtxremix.minecraft.logic.ZonePersistentState;
 
 class ZonePersistentStateTest {
 
@@ -86,15 +86,15 @@ class ZonePersistentStateTest {
                 "rtx zone define valid --center 1 2 3 --inner 4 --outer 8", 0, 0, 0);
         ZonePersistentState source = new ZonePersistentState();
         source.put(valid);
-        CompoundTag nbt = source.writeNbt(new CompoundTag(), null);
+        CompoundTag nbt = toNbt(source);
 
         CompoundTag malformed = new CompoundTag();
         malformed.putString("name", "broken");
         malformed.putString("channel", "mc.zone.broken");
         malformed.putString("shape", "sphere");
-        nbt.getList("zones", Tag.TAG_COMPOUND).add(malformed);
+        nbt.getList("zones").orElseThrow().add(malformed);
 
-        ZonePersistentState loaded = ZonePersistentState.fromNbt(nbt, null);
+        ZonePersistentState loaded = ZonePersistentState.fromNbt(nbt);
 
         assertEquals(1, loaded.snapshot().size());
         assertEquals(valid, loaded.snapshot().iterator().next());
@@ -106,7 +106,7 @@ class ZonePersistentStateTest {
         nbt.putInt("version", 999);
         nbt.put("zones", new ListTag());
 
-        ZonePersistentState loaded = ZonePersistentState.fromNbt(nbt, null);
+        ZonePersistentState loaded = ZonePersistentState.fromNbt(nbt);
 
         assertTrue(loaded.snapshot().isEmpty());
         assertFalse(loaded.isDirty());
@@ -132,7 +132,7 @@ class ZonePersistentStateTest {
         root.putInt("version", 1);
         root.put("zones", zones);
 
-        ZoneDefinition restored = ZonePersistentState.fromNbt(root, null).snapshot().iterator().next();
+        ZoneDefinition restored = ZonePersistentState.fromNbt(root).snapshot().iterator().next();
 
         assertEquals(second, restored);
         assertEquals(1.0f, restored.weight(100, 0, 0), 1e-6f);
@@ -158,31 +158,49 @@ class ZonePersistentStateTest {
                 "rtx zone define saved --center 4 5 6 --inner 7 --outer 11", 0, 0, 0);
         ZonePersistentState state = new ZonePersistentState();
         state.put(zone);
-        Path file = tempDir.resolve("rtx_remix_zones.dat");
+        Path file = net.minecraft.resources.Identifier.withDefaultNamespace("rtx_remix_zones.dat").resolveAgainst(tempDir);
 
         ensureGameVersionForPersistentStateSave();
-        state.save(file.toFile(), null);
+        var field = ZonePersistentState.class.getDeclaredField("TYPE");
+        field.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        var type = (net.minecraft.world.level.saveddata.SavedDataType<ZonePersistentState>) field.get(null);
+        try (var storage = new net.minecraft.world.level.storage.SavedDataStorage(tempDir, null,
+                net.minecraft.core.HolderLookup.Provider.create(java.util.stream.Stream.empty()))) {
+            storage.set(type, state);
+            storage.saveAndJoin();
+        }
 
         assertFalse(state.isDirty());
         CompoundTag root = NbtIo.readCompressed(file, NbtAccounter.unlimitedHeap());
-        ZonePersistentState loaded = ZonePersistentState.fromNbt(root.getCompound("data"), null);
+        ZonePersistentState loaded = ZonePersistentState.fromNbt(root.getCompound("data").orElseThrow());
         assertEquals(List.of(zone), new ArrayList<>(loaded.snapshot()));
     }
 
     private static ZonePersistentState roundTrip(ZoneDefinition zone) {
         ZonePersistentState state = new ZonePersistentState();
         state.put(zone);
-        CompoundTag nbt = state.writeNbt(new CompoundTag(), null);
-        return ZonePersistentState.fromNbt(nbt, null);
+        CompoundTag nbt = toNbt(state);
+        return ZonePersistentState.fromNbt(nbt);
     }
 
     private static CompoundTag writeOne(ZoneDefinition zone) {
         ZonePersistentState state = new ZonePersistentState();
         state.put(zone);
-        return state.writeNbt(new CompoundTag(), null)
-                .getList("zones", Tag.TAG_COMPOUND)
-                .getCompound(0)
+        return toNbt(state)
+                .getList("zones").orElseThrow()
+                .getCompound(0).orElseThrow()
                 .copy();
+    }
+
+    private static CompoundTag toNbt(ZonePersistentState state) {
+        try {
+            var method = ZonePersistentState.class.getDeclaredMethod("toNbt");
+            method.setAccessible(true);
+            return (CompoundTag) method.invoke(state);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
     }
 
     private static void ensureGameVersionForPersistentStateSave() {

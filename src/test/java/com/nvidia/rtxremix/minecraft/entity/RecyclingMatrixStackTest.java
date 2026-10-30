@@ -37,9 +37,9 @@ class RecyclingMatrixStackTest {
                 xScale, yScale, zScale);
 
         assertTrue(vanilla.last().pose()
-                .equals(recycling.peek().getPositionMatrix(), 0.0F));
+                .equals(recycling.last().pose(), 0.0F));
         assertTrue(vanilla.last().normal()
-                .equals(recycling.peek().getNormalMatrix(), 0.0F));
+                .equals(recycling.last().normal(), 0.0F));
     }
 
     @Test
@@ -54,9 +54,9 @@ class RecyclingMatrixStackTest {
                 1.0F, 1.0F, 1.0F);
 
         assertTrue(vanilla.last().pose()
-                .equals(recycling.peek().getPositionMatrix(), 0.0F));
+                .equals(recycling.last().pose(), 0.0F));
         assertTrue(vanilla.last().normal()
-                .equals(recycling.peek().getNormalMatrix(), 0.0F));
+                .equals(recycling.last().normal(), 0.0F));
     }
 
 }

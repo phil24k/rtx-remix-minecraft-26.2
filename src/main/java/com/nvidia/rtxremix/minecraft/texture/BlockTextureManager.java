@@ -165,7 +165,7 @@ public class BlockTextureManager {
         public final Identifier id;
         public final float u0, v0, u1, v1;
         public final boolean hasTransparency;
-        final int pixW, pixH, pixX, pixY;
+        final int pixW, pixH, pixX, pixY, padding;
         private final BitSet transparentPixels;
         RemixTexture albedo, normal, roughness, metallic, height, emissive, sss, sssAlbedo;
         public boolean hasPBR, hasSSS;
@@ -175,6 +175,7 @@ public class BlockTextureManager {
             this.index = i; this.id = id;
             u0 = s.getU0(); v0 = s.getV0(); u1 = s.getU1(); v1 = s.getV1();
             pixX = SpritePixels.x(s); pixY = SpritePixels.y(s);
+            padding = pixX - s.getX();
             SpriteContents contents = s.contents();
             pixW = contents.width(); pixH = contents.height();
             transparentPixels = scanTransparency(contents, pixW, pixH);
@@ -477,6 +478,18 @@ public class BlockTextureManager {
                 if (sI != null) sI.close();
                 if (sssI != null) sssI.close();
             }
+        }
+
+        // Filtering must see the same material on both sides of each sprite's UV edge.
+        for (SpriteEntry se : sprites) {
+            AtlasPadding.extend(albedoRGBA, atlasW, se.pixX, se.pixY, se.pixW, se.pixH, se.padding, 4);
+            AtlasPadding.extend(normalAtlas, atlasW, se.pixX, se.pixY, se.pixW, se.pixH, se.padding, 4);
+            AtlasPadding.extend(heightAtlas, atlasW, se.pixX, se.pixY, se.pixW, se.pixH, se.padding, 1);
+            AtlasPadding.extend(roughnessAtlas, atlasW, se.pixX, se.pixY, se.pixW, se.pixH, se.padding, 1);
+            AtlasPadding.extend(metallicAtlas, atlasW, se.pixX, se.pixY, se.pixW, se.pixH, se.padding, 1);
+            AtlasPadding.extend(emissiveAtlas, atlasW, se.pixX, se.pixY, se.pixW, se.pixH, se.padding, 4);
+            AtlasPadding.extend(sssThicknessAtlas, atlasW, se.pixX, se.pixY, se.pixW, se.pixH, se.padding, 4);
+            AtlasPadding.extend(sssAlbedoAtlas, atlasW, se.pixX, se.pixY, se.pixW, se.pixH, se.padding, 4);
         }
 
         atlasAlbedo = upload(api, "atlas_albedo", albedoRGBA, atlasW, atlasH,

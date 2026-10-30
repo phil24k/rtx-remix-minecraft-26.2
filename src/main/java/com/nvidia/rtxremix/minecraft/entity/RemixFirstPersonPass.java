@@ -23,9 +23,7 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.client.renderer.FirstPersonHandsAndItemsRenderer;
-import net.minecraft.client.renderer.state.level.FirstPersonHandsAndItemsRenderState;
-import net.minecraft.client.renderer.state.level.PlayerRenderState;
+import net.minecraft.client.renderer.ItemInHandRenderer;
 
 /**
  * Captures Minecraft's real first-person arm/item render and submits it as
@@ -71,17 +69,16 @@ public final class RemixFirstPersonPass implements AutoCloseable {
      * Has vanilla's first-person renderer submit the hands and held items, and
      * replays those submits into the Remix capture.
      */
-    public void capture(FirstPersonHandsAndItemsRenderer handsRenderer,
+    public void capture(ItemInHandRenderer handsRenderer,
                         float tickDelta,
                         PoseStack matrices,
-                        PlayerRenderState playerState,
-                        FirstPersonHandsAndItemsRenderState handsState) {
+                        LocalPlayer player,
+                        int light) {
         pendingResult = null;
         pendingMainHandLightPosition = null;
         pendingOffHandLightPosition = null;
 
         Minecraft client = Minecraft.getInstance();
-        LocalPlayer player = client == null ? null : client.player;
         if (client == null || client.gameRenderer == null || player == null) {
             return;
         }
@@ -98,7 +95,7 @@ public final class RemixFirstPersonPass implements AutoCloseable {
             modelView.invert(inverseModelView).transformPosition(eye.set(0.0f, 0.0f, 0.0f));
             context.setEye(eye.x, eye.y, eye.z);
 
-            handsRenderer.submitHandsWithItems(tickDelta, matrices, replay.collector(), playerState, handsState);
+            handsRenderer.submitHandsWithItems(tickDelta, matrices, replay.collector(), player, light);
             replay.replayInto(provider);
 
             List<RemixVertexConsumerProvider.CapturedLayer> layers = provider.endEntity();

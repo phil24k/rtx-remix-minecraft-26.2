@@ -95,15 +95,15 @@ class DynamicTextureCacheTest {
     @Test
     void clearDropsAClosedImageTextureEvenWhileTheManagerKeepsItRegistered() {
         Identifier id = Identifier.fromNamespaceAndPath("minecraft", "dynamic/closed-map");
-        TextureManager manager = new TextureManager(null);
-        DynamicTexture texture = new DynamicTexture(new NativeImage(1, 1, true));
-        manager.register(id, texture);
+        java.util.Map<Identifier, AbstractTexture> manager = new java.util.HashMap<>();
+        DynamicTexture texture = cpuImageTexture();
+        manager.put(id, texture);
         DynamicTextureCache.onRegisterTexture(id, texture, texture.getPixels());
         assertNotNull(DynamicTextureCache.get(id));
 
         texture.close();
-        assertNull(texture.getPixels());
-        assertSame(texture, manager.getTexture(id));
+        assertTrue(texture.getPixels().isClosed());
+        assertSame(texture, manager.get(id));
         DynamicTextureCache.clear();
 
         assertNull(DynamicTextureCache.get(id));
@@ -112,10 +112,10 @@ class DynamicTextureCacheTest {
     @Test
     void clearKeepsALiveImageTextureWhenAClosedTextureSharesItsId() {
         Identifier id = Identifier.fromNamespaceAndPath("minecraft", "dynamic/replaced-map");
-        DynamicTexture closed = new DynamicTexture(new NativeImage(1, 1, true));
+        DynamicTexture closed = cpuImageTexture();
         DynamicTextureCache.onRegisterTexture(id, closed, closed.getPixels());
         closed.close();
-        try (DynamicTexture live = new DynamicTexture(new NativeImage(1, 1, true))) {
+        try (DynamicTexture live = cpuImageTexture()) {
             DynamicTextureCache.onRegisterTexture(id, live, live.getPixels());
             DynamicTextureCache.Pixels captured = DynamicTextureCache.get(id);
 
@@ -128,7 +128,7 @@ class DynamicTextureCacheTest {
     @Test
     void capacityPruningDropsClosedImageTexturesWithoutWaitingForCollection() {
         Identifier closedId = Identifier.fromNamespaceAndPath("minecraft", "dynamic/pruned-map");
-        DynamicTexture closed = new DynamicTexture(new NativeImage(1, 1, true));
+        DynamicTexture closed = cpuImageTexture();
         DynamicTextureCache.onRegisterTexture(closedId, closed, closed.getPixels());
         closed.close();
         List<AbstractTexture> live = new ArrayList<>();
@@ -141,7 +141,7 @@ class DynamicTextureCacheTest {
             }
         }
 
-        assertNull(closed.getPixels());
+        assertTrue(closed.getPixels().isClosed());
         assertNull(DynamicTextureCache.get(closedId));
         assertEquals(DynamicTextureCache.capacity(), live.size());
     }
@@ -209,10 +209,23 @@ class DynamicTextureCacheTest {
         assertEquals(count, live.size());
     }
 
+    /** Creates only the CPU backing; constructing a GPU texture requires a live game. */
+    private static DynamicTexture cpuImageTexture() {
+        try {
+            var unsafeField = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+            unsafeField.setAccessible(true);
+            var unsafe = (sun.misc.Unsafe) unsafeField.get(null);
+            DynamicTexture texture = (DynamicTexture) unsafe.allocateInstance(DynamicTexture.class);
+            var pixels = DynamicTexture.class.getDeclaredField("pixels");
+            pixels.setAccessible(true);
+            pixels.set(texture, new NativeImage(1, 1, true));
+            return texture;
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
+    }
+
     private static AbstractTexture newTexture() {
-        return new AbstractTexture() {
-            @Override
-            public void load(ResourceManager manager) {}
-        };
+        return new AbstractTexture() {};
     }
 }

@@ -4,10 +4,10 @@
  */
 package com.nvidia.rtxremix.minecraft.mixin;
 
-import com.mojang.renderpearl.backend.opengl.GlSurface;
+import com.mojang.blaze3d.opengl.GlSurface;
 import com.nvidia.rtxremix.minecraft.RtxRemixMod;
 import com.nvidia.rtxremix.minecraft.RemixRenderer;
-import org.lwjgl.sdl.SDLVideo;
+import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 /**
  * Redirects the buffer swap inside the OpenGL surface's {@code present} to
  * Remix's present, so Vulkan owns the swapchain whenever the renderer is
- * initialized. Before that, and if initialization fails, the SDL swap runs
+ * initialized. Before that, and if initialization fails, the GLFW swap runs
  * unchanged.
  */
 @Mixin(GlSurface.class)
@@ -23,14 +23,14 @@ public abstract class RenderSystemMixin {
 
     @Redirect(
         method = "present",
-        at = @At(value = "INVOKE", target = "Lorg/lwjgl/sdl/SDLVideo;SDL_GL_SwapWindow(J)Z")
+        at = @At(value = "INVOKE", target = "Lorg/lwjgl/glfw/GLFW;glfwSwapBuffers(J)V")
     )
-    private boolean rtxremix$redirectSwapBuffers(long window) {
+    private void rtxremix$redirectSwapBuffers(long window) {
         RemixRenderer renderer = RtxRemixMod.renderer;
         if (renderer != null && renderer.isInitialized()) {
             renderer.presentFrameVk();
-            return true;
+            return;
         }
-        return SDLVideo.SDL_GL_SwapWindow(window);
+        GLFW.glfwSwapBuffers(window);
     }
 }

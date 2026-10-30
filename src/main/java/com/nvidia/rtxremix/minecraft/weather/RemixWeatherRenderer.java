@@ -5,9 +5,9 @@
 package com.nvidia.rtxremix.minecraft.weather;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.renderpearl.api.textures.GpuTexture;
-import com.mojang.renderpearl.api.textures.GpuTextureView;
-import com.mojang.renderpearl.backend.opengl.GlTexture;
+import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.blaze3d.opengl.GlTexture;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.WeatherEffectRenderer;
@@ -235,7 +235,7 @@ public final class RemixWeatherRenderer {
         for (WeatherEffectRenderer.ColumnInstance column : columns) {
             float relativeX = (float) (column.x() + 0.5 - cameraPos.x);
             float relativeZ = (float) (column.z() + 0.5 - cameraPos.z);
-            float distanceSq = Mth.lengthSquared(relativeX, relativeZ);
+            float distanceSq = (float) Mth.lengthSquared(relativeX, relativeZ);
             float alpha = Mth.lerp(Math.min(distanceSq / radiusSq, 1.0f), maxAlpha, 0.5f) * intensity;
             int tableX = Mth.clamp(column.x() - Mth.floor(cameraPos.x) + 16, 0, 31);
             int tableZ = Mth.clamp(column.z() - Mth.floor(cameraPos.z) + 16, 0, 31);

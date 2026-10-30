@@ -1,199 +1,135 @@
-# RTX Remix for Minecraft 26.3
+# RTX Remix for Minecraft 26.2 (Unofficial)
 
-Play Minecraft Java Edition 26.3 with real-time path tracing on a GeForce RTX
-GPU, powered by NVIDIA RTX Remix.
+A Windows x64 Fabric port of NVIDIA's Minecraft RTX Remix beta to Minecraft Java 26.2.
+It uses NVIDIA's RTX Remix runtime for path tracing, DLSS, and reflections.
 
-This is an unofficial community port of
-[NVIDIA's RTX Remix for Minecraft](https://github.com/NVIDIAGameWorks/rtx-remix-minecraft),
-which targets Minecraft 1.21.1, to Minecraft 26.3. NVIDIA does not maintain or
-support this port. Report problems here, not upstream.
+This is an unofficial community port. NVIDIA does not maintain or support it.
+The source is based on NVIDIA's 0.1.0 release and the Apache-2.0 community
+26.3 port by yeezybeezydeezy, commit d0bde279ddd021ab59c5c26c40770d39422fa985:
 
-## Status
+- https://github.com/NVIDIAGameWorks/rtx-remix-minecraft
+- https://github.com/yeezybeezydeezy/rtx-remix-minecraft/tree/port/26.3
 
-Tested in game on 26.3: terrain, water, sky, entities, particles (item-textured
-ones included), the first-person hands, rain and snow, and torch and lantern
-flames in hand. Clouds, block entities, the block outline, the Copper Beacon,
-camera paths and the in-game settings are ported but have had little testing
-on 26.3.
+## Validation
 
-Known gaps:
-
-- **The automated tests and most docs.** These still describe the 1.21.1
-  build.
-- **ARM64.** Releases carry the x64 runtime only.
-- **Held glass and ice.** A held block of glass or ice is drawn like any
-  other held block rather than with the refracting material its placed
-  counterpart gets.
-
-The upstream mod was tuned against one showcase world, and blocks, mobs and
-dimensions that world never reaches have had less care. The same holds here,
-plus whatever 26.3 changed that this port has not met yet.
-
-## Download
-
-Get the release archive from this fork's
-[Releases page](https://github.com/yeezybeezydeezy/rtx-remix-minecraft/releases).
-It holds the installer and the mod jar, which carries the RTX Remix runtime.
-
-## Install
-
-1. Extract the release archive.
-2. Double-click `install.bat` and follow the menu.
-3. Launch the **NVIDIA RTX Remix for Minecraft** instance in Prism Launcher,
-   or the profile of the same name in the Microsoft launcher.
-
-The installer sets up Fabric Loader 0.20.1, Fabric API and, where needed,
-Java 25 and a portable Prism Launcher. Running it over an install of the
-upstream 1.21.1 release moves that Prism instance to 26.3; back up its worlds
-first. The archive's `README.md` and `INSTALLER_REFERENCE.md` cover every
-option.
-
-### Installing By Hand
-
-To add the mod to a Fabric instance you already have, for example in
-[Prism Launcher](https://prismlauncher.org/):
-
-1. Create an instance for Minecraft 26.3 with Fabric Loader 0.20.1 or newer.
-2. Download [Fabric API](https://modrinth.com/mod/fabric-api) 0.165.0+26.3 or
-   newer.
-3. Put Fabric API and the mod jar, from the archive's `mods` folder, in the
-   instance's `mods` folder.
-4. Launch. The first start unpacks the RTX Remix runtime, about 1 GB, into
-   the game folder, so it takes longer than usual.
+The local Windows x64 build passes all 748 automated tests with no skips.
+A Windows x64 launch through Lunar was verified: the native renderer
+initialized and imported its color/depth interop images.
+Visual parity and a full playthrough have not been verified.
 
 ## Requirements
 
-- Windows 10 or 11, x64. This port has no ARM64 build yet.
-- Minecraft Java Edition 26.3, on a Microsoft account that owns the game.
-- Java 25. Minecraft 26.3 ships with it, and launchers pick it automatically.
-- A GeForce RTX 30-series or newer GPU with NVIDIA driver 616.92 or newer.
-- About 3 GB of free disk space while installing; about 2 GB stays in use.
-- An internet connection while the installer runs.
-- 16 GB of system memory is recommended.
+- Minecraft Java 26.2 and Java 25.
+- Fabric Loader 0.20.1 and Fabric API 0.161.0+26.2.
+- Windows x64 and an NVIDIA RTX 30-series or newer GPU.
+- NVIDIA driver 616.92 or newer.
 
-## Showcase World And Art Pack
+Use a separate game directory. Do not combine this renderer with Sodium,
+Iris, OptiFine, or other renderer replacements. The mod selects the OpenGL
+backend needed for its shared-image interop with Remix's Vulkan renderer.
 
-Upstream offers two optional extras, and both load on 26.3:
+## What you install
 
-- **The showcase world**, the map the renderer was tuned against, was built for
-  the upstream project by BlockWorks: [website](https://www.blockworks.uk/),
-  [YouTube](https://www.youtube.com/@BlockWorksYT),
-  [X](https://x.com/BlockWorksYT), and
-  [Instagram](https://www.instagram.com/blockworks/). Minecraft 26.3 upgrades
-  it the first time it opens; keep a copy if you want the original.
-- **The RTX art pack**, a LabPBR texture resource pack made by an art team at
-  NVIDIA. It was made for 1.21.1, so Minecraft lists it as made for an older
-  version; enable it anyway.
+The packaged `.jar` is a Fabric mod with bundled native NVIDIA runtime files.
+It is not a separate edition of Minecraft or a replacement launcher.
 
-The developer launcher in [`tools/`](tools/README.md) downloads both, but it
-still targets the 1.21.1 build. To install them into a 26.3 instance by hand,
-pull the packages pinned in [`tools/config.json`](tools/config.json) with
-Packman, then:
+| Part | Purpose |
+| --- | --- |
+| Minecraft Java 26.2 | Runs the game, world simulation, and multiplayer client. |
+| Fabric Loader and Fabric API | Load the mod and provide its Minecraft integration hooks. |
+| RTX Remix mod JAR | Captures Minecraft geometry, textures, materials, and lights. |
+| JNI bridge and RTX Remix runtime | Native DLLs that render the captured scene with path tracing and DLSS. |
+| Lunar profile / dedicated instance | Selects Minecraft, Fabric, memory, and an isolated game directory. |
 
-- copy the world into the instance's `saves` folder,
-- copy the art pack into its `resourcepacks` folder, and
-- copy the world package's `cameras` files into
-  `camera-paths/<save folder name>/` in the game folder, for the flythroughs.
+At launch, the packaged JAR extracts its native runtime into the game directory.
+The Java code sends the scene through a JNI bridge into NVIDIA's runtime.
+Remix renders using Vulkan; Minecraft uses OpenGL to share images with it and
+draw the interface. Choosing Vulkan in Minecraft's video menu does not switch
+this port to Minecraft's Vulkan backend: the mod currently forces OpenGL.
 
-## What It Does
+This is a client renderer. A remote server does not need the mod to display
+its world, but server resource packs and custom content can affect rendering.
+The profile is ordinary launcher configuration; the mod and native runtime
+provide the rendering features.
 
-**Every block, mob, and item is lit by a path tracer.** Light bounces off walls,
-through glass, and out of torches the way it does in a film renderer, so shadows,
-reflections, and the colour a nearby block casts on its neighbours are all
-computed rather than painted in.
+## Install
 
-**The look follows the game.** Time of day, weather, and being underwater each
-bring their own lighting, and a map author can attach a look to a place in the
-world.
+Place the packaged mod JAR and Fabric API in a dedicated Fabric 26.2
+instance's mods folder. In Lunar, turn Lunar features off for that profile.
+The JAR unpacks NVIDIA's runtime on first launch. Baseline material textures
+are included; extra LabPBR resource packs can supply metallic reflections
+and surface detail. Enable user packs above the Fabric resource pack.
 
-**A new block.** The Copper Beacon is a directional lamp you can place or
-carry, and its beam is a real light that picks out walls, rain, and anything
-standing in it.
+Graphics settings: Options, RTX Remix Settings. Alt+X opens Remix's overlay.
+In a world, `/rtx status` reports whether the renderer and SDK initialized.
 
-**Camera flythroughs.** Record a path by walking it, then replay it, for a video
-or for an exact before-and-after comparison.
+## Build and test
 
-**A settings screen in the game.** Distances, framerate, sky, lighting,
-exposure, and materials, all in Options, with a button into Remix's own
-Graphics Settings for the quality tier.
+Install JDK 25, Git, and Visual Studio C++ build tools. The Python staging
+option below also requires Python 3.12 or newer. Set JAVA_HOME to the
+JDK, then run:
 
-## Crash Reports And Privacy
-
-The mod collects no data of its own. The RTX Remix runtime it carries can send
-basic session information and crash reports to NVIDIA. Its First Use Guide asks
-about both, with both on by default, and the Permissions tab of the RTX Remix
-Graphics Settings menu changes them at any time.
-[Crash Reports And Privacy](docs/PLAYING.md#crash-reports-and-privacy) lists
-what is sent.
-
-## Building From Source
-
-Development happens on the `port/26.3` branch. You need:
-
-- JDK 25.
-- Visual Studio 2022 or newer with the C++ workload, for the JNI bridge.
-- An internet connection the first time, for Gradle dependencies and the
-  Packman-hosted Remix runtime.
-
-Build the win64 release archive, installer and jar, with:
-
-```bash
-.\gradlew.bat releaseArchive -Parch=win64 -x test -x compileTestJava
+```powershell
+.\gradlew.bat build test package -Parch=win64
 ```
 
-The archive and jar land in `build/distributions/`. Tests are skipped
-because they do not compile on 26.3 yet. If JDK 25 is installed somewhere
-Gradle does not search, point an environment variable such as `JDK25` at it
-and add `-Porg.gradle.java.installations.fromEnv=JDK25`.
+The packaged JAR is under build/distributions. The lightweight JAR under
+build/libs does not include the native runtime and is not a standalone install.
 
-[Getting Started](docs/GETTING_STARTED.md) covers the full development setup,
-but it still describes the 1.21.1 build.
+The native bridge source and API header are unchanged from NVIDIA's v0.1.0.
+To build without installing the C++ toolchain, download NVIDIA's original
+[v0.1.0 release ZIP](https://github.com/NVIDIAGameWorks/rtx-remix-minecraft/releases/download/v0.1.0/rtx-remix-renderer-0.1.0-202610230634-170197a.zip),
+then stage its matching published native binaries:
 
-### What Changed For 26.3
+```powershell
+python packaging/stage_published_runtime.py PATH_TO_ORIGINAL_RELEASE_ZIP
+.\gradlew.bat build test package -Parch=win64 -x compileNativeWin64
+```
 
-- The build moved to unobfuscated 26.3 with Mojang names, Fabric Loom 1.19,
-  Gradle 9.8 and Java 25.
-- Remix attaches to 26.3's SDL3 window and presents in place of the OpenGL
-  backend's buffer swap.
-- Terrain, entity, block entity, first-person, particle, sky, cloud and
-  outline capture follow 26.3's extract, submit and frame-graph rendering.
-- Animated textures are forwarded from 26.3's GPU-side sprite animation, and
-  atlas copies account for its per-sprite padding.
-- Mixins whose purpose 26.3 made redundant, mostly vanilla performance
-  patches, were dropped.
+The staging script verifies NVIDIA's archive checksum and the exact bridge
+source/header hashes. It refuses incompatible native sources or managed
+runtime junctions. Normal Gradle tasks acquire the separate runtime textures.
 
-## Source Layout
+The unit suite uses Fabric Loader JUnit so Minecraft classes receive their
+real mixin transformations. Tests cover chunk and material processing,
+geometry capture, lighting configuration, persistence, camera paths, and the
+48 configured mixin targets, including actual class transformation.
+Automated tests do not establish visual parity in a running world.
 
-| Path | Purpose |
-|---|---|
-| `src/` | Mod implementation and JVM tests |
-| `rtxremix-java/` | Minecraft-agnostic Java facade and JNI bridge over the RTX Remix C API |
-| `tools/` | Developer launcher, benchmarks, profiling, SDK staging, and development installation |
-| `packman/` | Packman bootstrap and runtime package pins |
-| `packaging/` | Installer, runtime defaults, and distribution payload |
-| `docs/` | Player, authoring, and source-build guides, written for upstream's 1.21.1 build |
+## Port changes
 
-## Contributing
+- Target 26.2, Java 25, and matching Fabric dependencies throughout packaging.
+- Use 26.2's Blaze3D types and GLFW window, native HWND, input, and presentation.
+- Adapt first-person item submission, world render callbacks, breaking decals,
+  sprite-coordinate wrappers, Copper Beacon models, cloud color, and block codecs.
+- Preserve vanilla render traversal while substituting Remix's draw and present.
+- Update closed dynamic-texture detection for 26.2's retained image objects.
+- Extrude atlas gutters for static and animated textures/material maps to address black mip borders.
+- Restore the inherited test suite and verify injection targets against 26.2.
 
-Fixes for the gaps listed under [Status](#status) are the most useful
-contributions. Fork this repository, branch from `port/26.3`, and open a pull
-request against it. Sign off each commit with `git commit -s` to certify it
-under the [Developer Certificate of Origin](https://developercertificate.org/).
-Changes that also apply to 1.21.1 belong upstream; see
-[CONTRIBUTING.md](CONTRIBUTING.md) for upstream's guidelines.
+This remains experimental. The 26.3 source port's held-glass/ice material
+limitation has not been addressed, and visual testing is needed for all
+worlds, dimensions, resource packs, and third-party mod combinations. A distant
+block-edge grid has been reported with a server-provided Nexo resource pack;
+the atlas-padding patch is included, but that server-specific issue is not
+confirmed resolved.
 
-## License
+## Repository contents
 
-This project is licensed under the Apache License, Version 2.0 (`Apache-2.0`).
-See the [LICENSE](LICENSE) file. Attribution notices are in [NOTICE](NOTICE),
-and third-party software distributed with this project is documented in
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Release jars also carry
-the RTX Remix runtime, whose NVIDIA components are covered by their own license
-terms; THIRD_PARTY_NOTICES.md lists them.
+The repository contains the Java mod, JNI bridge source/header, tests, bundled
+material assets, licenses, documentation, Gradle wrapper, and packaging tools.
+NVIDIA runtime binaries and Minecraft dependencies are downloaded during
+build/staging; packaged JARs belong in GitHub Releases rather than Git history.
+Launcher profiles, accounts, tokens, saves, server packs, logs, screenshots,
+local configuration, and build caches are excluded.
 
-NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR
-MICROSOFT. Minecraft is a trademark of Mojang Synergies AB.
+The 26.2 README is the reference for this port. Inherited developer guides,
+agent instructions, and Prism tooling may still describe upstream Minecraft
+1.21.1 or the community 26.3 branch; they do not expand the supported version
+of this build.
 
-NVIDIA, GeForce, and RTX are trademarks and/or registered trademarks of NVIDIA
-Corporation in the U.S. and other countries. This port is not affiliated with
-or endorsed by NVIDIA.
+## License and attribution
+
+The mod source is Apache-2.0. See LICENSE, NOTICE, and THIRD_PARTY_NOTICES.md.
+NVIDIA's bundled runtime components retain their separate license terms.
+This is not an official Minecraft product and is not approved by Mojang or Microsoft.

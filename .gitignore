@@ -68,3 +68,25 @@ nrc_session_log.txt
 /rtxremix-java/**/*.class
 /rtxremix-java/**/*.jar
 /rtxremix-java/**/*.log
+
+# Local launchers, worlds, and downloaded server content
+/mods/
+/saves/
+/screenshots/
+/resourcepacks/
+/downloads/
+/server-resource-packs/
+/accounts.json
+/launcher_accounts.json
+/launcher_profiles.json
+/servers.dat
+/servers.dat_old
+/options.txt
+
+# Local credentials and machine settings
+.env
+.env.*
+!.env.example
+*.local.json
+*.key
+*.pem

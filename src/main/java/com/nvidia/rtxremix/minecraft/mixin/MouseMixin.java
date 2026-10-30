@@ -65,7 +65,7 @@ public abstract class MouseMixin implements RemixMouseAccess {
 
     @Inject(method = "onMove", at = @At("HEAD"), cancellable = true)
     private void rtxremix$blockMovementWhileMenuOpen(
-            long handle, double cursorX, double cursorY, double xrel, double yrel, CallbackInfo ci) {
+            long handle, double cursorX, double cursorY, CallbackInfo ci) {
         if (RtxRemixMod.getRemixInputGate().isCaptureSessionOpen()) {
             xpos = cursorX;
             ypos = cursorY;

@@ -27,8 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import TerrainAssetRetirementQueue;
-import TerrainState;
+import com.nvidia.rtxremix.minecraft.terrain.TerrainAssetRetirementQueue;
+import com.nvidia.rtxremix.minecraft.terrain.TerrainState;
 
 class ChunkManagerMeshInstallTest {
 

@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
-import RemixEntitySubmitter;
+import com.nvidia.rtxremix.minecraft.entity.RemixEntitySubmitter;
 
 /**
  * Pins the instance blend state a tinted cuboid receives. Cuboid meshes are baked

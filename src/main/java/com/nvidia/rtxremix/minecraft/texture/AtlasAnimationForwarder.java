@@ -89,10 +89,11 @@ public final class AtlasAnimationForwarder {
          */
         final long pixelPtr;
         final int rowPitch;
+        final int padding;
 
         PatchRecord(Identifier id, int dstX, int dstY, int srcX, int srcY,
                     int width, int height, int srcImageWidth, int srcImageHeight,
-                    long pixelPtr, int rowPitch) {
+                    long pixelPtr, int rowPitch, int padding) {
             this.id = id;
             this.dstX = dstX;
             this.dstY = dstY;
@@ -104,6 +105,7 @@ public final class AtlasAnimationForwarder {
             this.srcImageHeight = srcImageHeight;
             this.pixelPtr = pixelPtr;
             this.rowPitch = rowPitch;
+            this.padding = padding;
         }
 
         boolean isInterpolatedUpload() {
@@ -158,7 +160,7 @@ public final class AtlasAnimationForwarder {
     public static void addPatch(Identifier spriteId, int dstX, int dstY,
                                 int srcX, int srcY, int width, int height,
                                 int srcImageWidth, int srcImageHeight,
-                                long pixelPtr, int rowPitch) {
+                                long pixelPtr, int rowPitch, int padding) {
         // Drop patches when the forwarder is not active (SDK missing, RTX
         // disabled, or post-shutdown/reload). Prevents an unbounded queue
         // when SpriteContents.upload still fires but we'll never flush.
@@ -188,7 +190,7 @@ public final class AtlasAnimationForwarder {
 
         pendingPatches.add(new PatchRecord(spriteId, dstX, dstY, srcX, srcY,
                                            width, height, srcImageWidth, srcImageHeight,
-                                           pixelPtr, rowPitch));
+                                           pixelPtr, rowPitch, padding));
     }
 
     private static FrameSampling resolveLabPBRFrameSampling(
@@ -318,7 +320,7 @@ public final class AtlasAnimationForwarder {
                 albedoDst.flip();
                 ownedBuffers.add(albedoDst);
 
-                albedoPatches[i] = createPatch(p, albedoDst, patchRowBytes, TextureFormat.RGBA8_UNORM);
+                albedoPatches[i] = createPatch(p, albedoDst, patchRowBytes, TextureFormat.RGBA8_UNORM, ownedBuffers);
 
                 // --- _s RGB material channels ---
                 // LabPBR packs roughness/metallic/SSS into _s.rgb. These
@@ -338,7 +340,7 @@ public final class AtlasAnimationForwarder {
                     roughnessDst.put(scratch, 0, patchR8Bytes);
                     roughnessDst.flip();
                     ownedBuffers.add(roughnessDst);
-                    roughnessPatches.add(createPatch(p, roughnessDst, p.width, TextureFormat.R8_UNORM));
+                    roughnessPatches.add(createPatch(p, roughnessDst, p.width, TextureFormat.R8_UNORM, ownedBuffers));
                 }
 
                 if (pbr != null && pbr.sMetallicTable != null && metallicHandle != 0) {
@@ -355,7 +357,7 @@ public final class AtlasAnimationForwarder {
                     metallicDst.put(scratch, 0, patchR8Bytes);
                     metallicDst.flip();
                     ownedBuffers.add(metallicDst);
-                    metallicPatches.add(createPatch(p, metallicDst, p.width, TextureFormat.R8_UNORM));
+                    metallicPatches.add(createPatch(p, metallicDst, p.width, TextureFormat.R8_UNORM, ownedBuffers));
                 }
 
                 if (pbr != null && pbr.hasSss && pbr.sSssTable != null && sssHandle != 0) {
@@ -370,7 +372,7 @@ public final class AtlasAnimationForwarder {
                     sssDst.put(scratch, 0, patchBytes);
                     sssDst.flip();
                     ownedBuffers.add(sssDst);
-                    sssPatches.add(createPatch(p, sssDst, patchRowBytes, TextureFormat.RGBA8_UNORM));
+                    sssPatches.add(createPatch(p, sssDst, patchRowBytes, TextureFormat.RGBA8_UNORM, ownedBuffers));
                 }
 
                 // --- Emissive patch (authored _s alpha, else a built-in mask) ---
@@ -405,7 +407,7 @@ public final class AtlasAnimationForwarder {
                 emissiveDst.flip();
                 ownedBuffers.add(emissiveDst);
 
-                emissivePatches.add(createPatch(p, emissiveDst, patchRowBytes, TextureFormat.RGBA8_UNORM));
+                emissivePatches.add(createPatch(p, emissiveDst, patchRowBytes, TextureFormat.RGBA8_UNORM, ownedBuffers));
             }
 
             // One batch per frame: the runtime handles each entry's texture
@@ -437,14 +439,30 @@ public final class AtlasAnimationForwarder {
         }
     }
 
-    private static TexturePatch createPatch(PatchRecord p, ByteBuffer data, int rowPitch, int format) {
+    private static TexturePatch createPatch(PatchRecord p, ByteBuffer data, int rowPitch, int format,
+            List<ByteBuffer> ownedBuffers) {
         TexturePatch patch = new TexturePatch();
         patch.dstX = p.dstX;
         patch.dstY = p.dstY;
         patch.width = p.width;
         patch.height = p.height;
-        patch.pixelData = data;
-        patch.rowPitch = rowPitch;
+        if (p.padding > 0) {
+            int channels = format == TextureFormat.R8_UNORM ? 1 : 4;
+            patch.dstX -= p.padding;
+            patch.dstY -= p.padding;
+            patch.width += 2 * p.padding;
+            patch.height += 2 * p.padding;
+            int paddedPitch = patch.width * channels;
+            ByteBuffer padded = DirectBufferPool.acquire(paddedPitch * patch.height);
+            ownedBuffers.add(padded);
+            AtlasPadding.writePadded(data, rowPitch, padded, p.width, p.height, p.padding, channels);
+            padded.flip();
+            patch.pixelData = padded;
+            patch.rowPitch = paddedPitch;
+        } else {
+            patch.pixelData = data;
+            patch.rowPitch = rowPitch;
+        }
         patch.format = format;
         return patch;
     }

@@ -52,7 +52,8 @@
         "TorchBlockAccessor",
         "UnfocusedFramerateMixin",
         "WindowMixin",
-        "WorldRendererMixin"
+        "WorldRendererMixin",
+        "SpriteCoordinateExpanderAccessor"
     ],
     "injectors": {
         "defaultRequire": 1

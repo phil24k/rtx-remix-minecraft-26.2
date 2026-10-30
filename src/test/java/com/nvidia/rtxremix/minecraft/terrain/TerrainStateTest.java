@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import TerrainState;
+import com.nvidia.rtxremix.minecraft.terrain.TerrainState;
 
 class TerrainStateTest {
 

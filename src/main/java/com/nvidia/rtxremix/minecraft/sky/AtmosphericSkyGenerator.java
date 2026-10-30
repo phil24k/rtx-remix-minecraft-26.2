@@ -24,7 +24,7 @@ import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GL44;
-import com.mojang.renderpearl.backend.opengl.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 
 /**
  * Renders the atmospheric sky panorama and its ambient statistics with compute

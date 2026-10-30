@@ -12,7 +12,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import StillShot;
+import com.nvidia.rtxremix.minecraft.camera.StillShot;
 
 class StillShotCodecTest {
 

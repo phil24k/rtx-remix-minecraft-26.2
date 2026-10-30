@@ -328,12 +328,6 @@ public class RemixCapturingConsumer implements VertexConsumer {
         return this;
     }
 
-    /** The fourth texture-coordinate set carries nothing Remix shades with. */
-    @Override
-    public VertexConsumer setUv3(float u, float v) {
-        return this;
-    }
-
     @Override
     public VertexConsumer setLight(int uv) {
         return this;
@@ -656,13 +650,6 @@ public class RemixCapturingConsumer implements VertexConsumer {
                 (color & 0xFF) / 255.0f,
                 ((color >>> 24) & 0xFF) / 255.0f,
                 quadLightScratch, instance.overlayCoords(), false);
-    }
-
-    /** The glint is a shading effect Remix does not reproduce; the quad itself is captured. */
-    @Override
-    public void putBakedQuadWithGlint(PoseStack.Pose matrixEntry, BakedQuad quad, QuadInstance instance,
-                                      PoseStack.Pose sheetedDecalPose) {
-        putBakedQuad(matrixEntry, quad, instance);
     }
 
     /**

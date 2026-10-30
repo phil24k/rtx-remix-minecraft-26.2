@@ -190,7 +190,7 @@ public class RtxRemixMod implements ClientModInitializer {
     private static final long CAMERA_TIME_STEP_TICKS = 10L;
     private static final long CAMERA_TIME_FAST_STEP_TICKS = 250L;
 
-    /** Returns the shared Minecraft-side input gate used by the SDL input mixins. */
+    /** Returns the shared Minecraft-side input gate used by the GLFW input mixins. */
     public static RemixInputGate getRemixInputGate() {
         return REMIX_INPUT_GATE;
     }
@@ -352,7 +352,7 @@ public class RtxRemixMod implements ClientModInitializer {
         toggleHeldLightsKey = KeyMappingHelper.registerKeyMapping(
             new KeyMapping(
                 "key.rtxremix.toggleHeldLights",
-                InputConstants.Type.KEYBOARD,
+                InputConstants.Type.KEYSYM,
                 InputConstants.KEY_H,
                 KEY_CATEGORY
             )
@@ -363,7 +363,7 @@ public class RtxRemixMod implements ClientModInitializer {
         toggleRtxKey = KeyMappingHelper.registerKeyMapping(
             new KeyMapping(
                 "key.rtxremix.toggleRtx",
-                InputConstants.Type.KEYBOARD,
+                InputConstants.Type.KEYSYM,
                 InputConstants.KEY_F8,
                 KEY_CATEGORY
             )

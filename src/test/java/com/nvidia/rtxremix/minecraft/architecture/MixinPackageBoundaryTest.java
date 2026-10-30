@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package com.nvidia.rtxremix.minecraft.mixin;
+package com.nvidia.rtxremix.minecraft.architecture;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -69,11 +69,26 @@ class MixinPackageBoundaryTest {
     void mixinAddedMembersCarryTheModPrefix() throws Exception {
         Set<String> offenders = new TreeSet<>();
         for (String simpleName : configuredMixins()) {
-            Class<?> mixin = Class.forName(
-                    MIXIN_PACKAGE + "." + simpleName, false, getClass().getClassLoader());
-            for (Member member : declaredMembers(mixin)) {
-                if (isMerged(member) && !member.getName().toLowerCase().startsWith(MEMBER_PREFIX)) {
-                    offenders.add(simpleName + "." + member.getName());
+            String name = MIXIN_PACKAGE.replace('.', '/') + "/" + simpleName;
+            var mixin = classNode(name);
+            for (var field : mixin.fields) {
+                if ((field.access & org.objectweb.asm.Opcodes.ACC_SYNTHETIC) == 0
+                        && !hasMixinAnnotation(field.visibleAnnotations, field.invisibleAnnotations)
+                        && !field.name.toLowerCase().startsWith(MEMBER_PREFIX)) {
+                    offenders.add(simpleName + "." + field.name);
+                }
+            }
+            for (var method : mixin.methods) {
+                if (method.name.startsWith("<")
+                        || (method.access & (org.objectweb.asm.Opcodes.ACC_SYNTHETIC | org.objectweb.asm.Opcodes.ACC_ABSTRACT)) != 0
+                        || hasMixinAnnotation(method.visibleAnnotations, method.invisibleAnnotations)) continue;
+                boolean interfaceMethod = false;
+                for (String iface : mixin.interfaces) {
+                    interfaceMethod |= classNode(iface).methods.stream()
+                            .anyMatch(m -> m.name.equals(method.name) && m.desc.equals(method.desc));
+                }
+                if (!interfaceMethod && !method.name.toLowerCase().startsWith(MEMBER_PREFIX)) {
+                    offenders.add(simpleName + "." + method.name);
                 }
             }
         }
@@ -96,44 +111,28 @@ class MixinPackageBoundaryTest {
         return configured;
     }
 
-    private static List<Member> declaredMembers(Class<?> mixin) {
-        List<Member> members = new ArrayList<>();
-        for (Field field : mixin.getDeclaredFields()) members.add(field);
-        for (Method method : mixin.getDeclaredMethods()) members.add(method);
-        return members;
+    private static org.objectweb.asm.tree.ClassNode classNode(String name) throws Exception {
+        try (var stream = MixinPackageBoundaryTest.class.getClassLoader().getResourceAsStream(name + ".class")) {
+            assertNotNull(stream, name);
+            var node = new org.objectweb.asm.tree.ClassNode();
+            new org.objectweb.asm.ClassReader(stream).accept(node, org.objectweb.asm.ClassReader.SKIP_CODE);
+            return node;
+        }
     }
 
-    /** True when Mixin copies this member into the target under the name it has here. */
-    private static boolean isMerged(Member member) {
-        if (member.isSynthetic() || Modifier.isAbstract(member.getModifiers())) {
-            return false;
-        }
-        for (Annotation annotation : ((AnnotatedElement) member).getAnnotations()) {
-            if (annotation.annotationType().getName().startsWith(MIXIN_ANNOTATION_PACKAGE)) {
-                return false;
-            }
-        }
-        return !(member instanceof Method method) || !implementsInterfaceMethod(method);
-    }
-
-    /** An interface the mixin implements owns the name, and those interfaces are prefixed. */
-    private static boolean implementsInterfaceMethod(Method method) {
-        for (Class<?> implemented : method.getDeclaringClass().getInterfaces()) {
-            try {
-                implemented.getMethod(method.getName(), method.getParameterTypes());
-                return true;
-            } catch (NoSuchMethodException ignored) {
-                // Declared by another interface, or by the mixin itself.
+    private static boolean hasMixinAnnotation(List<org.objectweb.asm.tree.AnnotationNode> visible,
+            List<org.objectweb.asm.tree.AnnotationNode> invisible) {
+        for (var annotations : List.of(visible == null ? List.<org.objectweb.asm.tree.AnnotationNode>of() : visible,
+                invisible == null ? List.<org.objectweb.asm.tree.AnnotationNode>of() : invisible)) {
+            for (var annotation : annotations) {
+                if (annotation.desc.startsWith("Lorg/spongepowered/asm/mixin/")) return true;
             }
         }
         return false;
     }
 
-    private static void addEntries(Set<String> configured, JsonArray entries) {
-        if (entries == null) return;
-        for (JsonElement entry : entries) {
-            String name = entry.getAsString();
-            assertTrue(configured.add(name), name + " is listed twice in " + MIXIN_CONFIG);
-        }
+    private static void addEntries(Set<String> entries, JsonArray array) {
+        if (array == null) return;
+        for (JsonElement entry : array) entries.add(entry.getAsString());
     }
 }

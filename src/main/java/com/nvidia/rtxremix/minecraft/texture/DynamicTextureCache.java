@@ -46,7 +46,7 @@ import com.nvidia.rtxremix.minecraft.util.NativeImagePixels;
  * whole client session and uploads it exactly once, so a snapshot dropped for any reason
  * other than its texture's release would never be captured again and the player would
  * render with the default skin until the game restarts. {@link #TEXTURE_IDS} holds its
- * keys weakly. Image-backed textures also count as released once their image is null:
+ * keys weakly. Image-backed textures also count as released once their image is closed:
  * vanilla can close a map texture without removing it from the texture manager.
  *
  * <p>Versions are monotonic for the life of the process. Consumers keep the version they
@@ -175,7 +175,7 @@ public final class DynamicTextureCache {
         synchronized (TEXTURE_IDS) {
             for (var entry : TEXTURE_IDS.entrySet()) {
                 if (!(entry.getKey() instanceof DynamicTexture texture)
-                        || texture.getPixels() != null) {
+                        || !texture.getPixels().isClosed()) {
                     liveIds.add(entry.getValue());
                 }
             }

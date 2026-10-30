@@ -195,22 +195,25 @@ loom {
 // Fabric API (keep in sync with FABRIC_API_VERSION in packaging/installer.ps1,
 // which is what gets installed at runtime on the user's machine). One literal
 // serves both the compile dependency and stageFabricApi.
-def fabricApiCoordinate = "net.fabricmc.fabric-api:fabric-api:0.165.0+26.3"
+def fabricApiCoordinate = "net.fabricmc.fabric-api:fabric-api:0.161.0+26.2"
 
 dependencies {
     // Minecraft and Fabric
-    minecraft "com.mojang:minecraft:26.3"
+    minecraft "com.mojang:minecraft:26.2"
     implementation "net.fabricmc:fabric-loader:0.20.1"
 
     implementation fabricApiCoordinate
 
     // Testing
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'net.fabricmc:fabric-loader-junit:0.20.1'
+    testImplementation 'org.ow2.asm:asm-tree:9.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 test {
     useJUnitPlatform()
+    systemProperty 'fabric.side', 'client'
     // Pin the per-frame install cap so tests don't depend on the CPU count
     systemProperty 'rtxremix.chunk.maxInstalledColumnsPerFrame', '8'
 }

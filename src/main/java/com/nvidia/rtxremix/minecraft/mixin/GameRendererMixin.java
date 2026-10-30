@@ -8,11 +8,10 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.nvidia.rtxremix.minecraft.RemixRenderer;
 import com.nvidia.rtxremix.minecraft.RtxRemixMod;
 import com.nvidia.rtxremix.minecraft.profiling.ProfileScope;
-import net.minecraft.client.renderer.FirstPersonHandsAndItemsRenderer;
+import net.minecraft.client.renderer.ItemInHandRenderer;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.state.level.FirstPersonHandsAndItemsRenderState;
-import net.minecraft.client.renderer.state.level.PlayerRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -33,22 +32,22 @@ public abstract class GameRendererMixin {
             method = "renderItemInHand",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/renderer/FirstPersonHandsAndItemsRenderer;submitHandsWithItems(FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/PlayerRenderState;Lnet/minecraft/client/renderer/state/level/FirstPersonHandsAndItemsRenderState;)V"
+                    target = "Lnet/minecraft/client/renderer/ItemInHandRenderer;submitHandsWithItems(FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/player/LocalPlayer;I)V"
             ))
     private void rtxremix$captureFirstPersonModel(
-            FirstPersonHandsAndItemsRenderer handsRenderer,
+            ItemInHandRenderer handsRenderer,
             float tickDelta,
             PoseStack matrices,
             SubmitNodeCollector collector,
-            PlayerRenderState playerState,
-            FirstPersonHandsAndItemsRenderState handsState) {
+            LocalPlayer player,
+            int light) {
         RemixRenderer renderer = RtxRemixMod.renderer;
         if (!RtxRemixMod.shouldCaptureFirstPersonModel()) {
-            handsRenderer.submitHandsWithItems(tickDelta, matrices, collector, playerState, handsState);
+            handsRenderer.submitHandsWithItems(tickDelta, matrices, collector, player, light);
             return;
         }
 
-        renderer.captureFirstPersonModel(handsRenderer, tickDelta, matrices, playerState, handsState);
+        renderer.captureFirstPersonModel(handsRenderer, tickDelta, matrices, player, light);
     }
 
     /**
@@ -57,10 +56,10 @@ public abstract class GameRendererMixin {
      * frame.
      */
     @Inject(
-            method = "render3dHud",
+            method = "renderLevel",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/renderer/ScreenEffectRenderer;submit(FLnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/PlayerRenderState;Lnet/minecraft/client/renderer/state/level/CameraRenderState;Z)V"
+                    target = "Lnet/minecraft/client/renderer/ScreenEffectRenderer;submit(ZZFLnet/minecraft/client/renderer/SubmitNodeCollector;Z)V"
             ))
     private void rtxremix$submitBeforeScreenOverlays(CallbackInfo ci) {
         RtxRemixMod.submitRemixFrameIfReady();

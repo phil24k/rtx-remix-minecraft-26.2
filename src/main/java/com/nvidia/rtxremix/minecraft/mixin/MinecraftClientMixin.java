@@ -193,7 +193,7 @@ public abstract class MinecraftClientMixin {
         method = "renderFrame",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/GameRenderer;render()V",
+            target = "Lnet/minecraft/client/renderer/GameRenderer;render(Lnet/minecraft/client/DeltaTracker;Z)V",
             shift = At.Shift.AFTER
         )
     )
@@ -205,7 +205,7 @@ public abstract class MinecraftClientMixin {
         method = "renderFrame",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/renderpearl/api/device/GpuSurface;blitFromTexture(Lcom/mojang/renderpearl/api/commands/CommandEncoder;Lcom/mojang/renderpearl/api/textures/GpuTextureView;)V"
+            target = "Lcom/mojang/blaze3d/systems/GpuSurface;blitFromTexture(Lcom/mojang/blaze3d/systems/CommandEncoder;Lcom/mojang/blaze3d/textures/GpuTextureView;)V"
         ),
         require = 0
     )
@@ -224,7 +224,7 @@ public abstract class MinecraftClientMixin {
         method = "renderFrame",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/renderpearl/api/device/GpuSurface;blitFromTexture(Lcom/mojang/renderpearl/api/commands/CommandEncoder;Lcom/mojang/renderpearl/api/textures/GpuTextureView;)V",
+            target = "Lcom/mojang/blaze3d/systems/GpuSurface;blitFromTexture(Lcom/mojang/blaze3d/systems/CommandEncoder;Lcom/mojang/blaze3d/textures/GpuTextureView;)V",
             shift = At.Shift.AFTER
         ),
         require = 0
@@ -237,7 +237,7 @@ public abstract class MinecraftClientMixin {
         method = "renderFrame",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/renderpearl/api/device/GpuSurface;present()V"
+            target = "Lcom/mojang/blaze3d/systems/GpuSurface;present()V"
         )
     )
     private void rtxremix$beforeSwapBuffers(boolean tick, CallbackInfo ci) {
@@ -248,7 +248,7 @@ public abstract class MinecraftClientMixin {
         method = "renderFrame",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/renderpearl/api/device/GpuSurface;present()V",
+            target = "Lcom/mojang/blaze3d/systems/GpuSurface;present()V",
             shift = At.Shift.AFTER
         )
     )
@@ -337,7 +337,7 @@ public abstract class MinecraftClientMixin {
         method = "tick",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/GameRenderer;pick(F)V"
+            target = "Lnet/minecraft/client/Minecraft;pick(F)V"
         ),
         require = 0
     )
@@ -349,7 +349,7 @@ public abstract class MinecraftClientMixin {
         method = "tick",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/GameRenderer;pick(F)V",
+            target = "Lnet/minecraft/client/Minecraft;pick(F)V",
             shift = At.Shift.AFTER
         ),
         require = 0
@@ -384,7 +384,7 @@ public abstract class MinecraftClientMixin {
     }
 
     @Inject(
-        method = "tick",
+        method = "runTick",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/texture/TextureManager;tick()V"
@@ -392,11 +392,11 @@ public abstract class MinecraftClientMixin {
         require = 0
     )
     private void rtxremix$beforeTextureTick(CallbackInfo ci) {
-        rtxremix$openTickPhase("MinecraftClient.tick.textures");
+        rtxremix$openTickPhase("MinecraftClient.runTick.textures");
     }
 
     @Inject(
-        method = "tick",
+        method = "runTick",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/texture/TextureManager;tick()V",
@@ -458,30 +458,9 @@ public abstract class MinecraftClientMixin {
         rtxremix$closeTickPhase();
     }
 
-    @Inject(
-        method = "tick",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;tick()V"
-        ),
-        require = 0
-    )
-    private void rtxremix$beforeWorldRendererTick(CallbackInfo ci) {
-        rtxremix$openTickPhase("MinecraftClient.tick.worldRenderer");
-    }
 
-    @Inject(
-        method = "tick",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;tick()V",
-            shift = At.Shift.AFTER
-        ),
-        require = 0
-    )
-    private void rtxremix$afterWorldRendererTick(CallbackInfo ci) {
-        rtxremix$closeTickPhase();
-    }
+
+
 
     @Inject(
         method = "tick",

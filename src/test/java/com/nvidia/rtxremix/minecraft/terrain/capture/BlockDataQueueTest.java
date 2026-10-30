@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import SectionBlockData;
+import com.nvidia.rtxremix.minecraft.terrain.capture.SectionBlockData;
 
 class BlockDataQueueTest {
 

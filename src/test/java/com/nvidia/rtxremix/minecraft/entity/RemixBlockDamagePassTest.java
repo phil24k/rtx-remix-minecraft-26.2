@@ -194,6 +194,8 @@ class RemixBlockDamagePassTest {
             return this;
         }
 
+        @Override public VertexConsumer setLineWidth(float width) { return this; }
+        @Override public VertexConsumer setColor(int color) { this.color = color; return this; }
         @Override public VertexConsumer setUv1(int u, int v) { return this; }
         @Override public VertexConsumer setUv2(int u, int v) { return this; }
 

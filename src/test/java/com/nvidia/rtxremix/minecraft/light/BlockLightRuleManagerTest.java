@@ -33,7 +33,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.metadata.MetadataSectionSerializer;
+import net.minecraft.server.packs.metadata.MetadataSectionType;
 import net.minecraft.server.packs.repository.KnownPack;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.resources.IoSupplier;
@@ -395,7 +395,7 @@ class BlockLightRuleManagerTest {
         }
 
         @Override
-        public <T> T getMetadataSection(MetadataSectionSerializer<T> metaReader) throws IOException {
+        public <T> T getMetadataSection(MetadataSectionType<T> metaReader) throws IOException {
             return null;
         }
 

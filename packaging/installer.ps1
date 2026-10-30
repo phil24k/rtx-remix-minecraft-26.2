@@ -139,13 +139,13 @@ $script:PRISM_INSTANCE_LEGACY_NAMES = @(
     'RTX Remix 1.21.1 (Fabric)'
 )
 $script:PRISM_PORTABLE_DIR   = Join-Path $env:LOCALAPPDATA 'RtxRemixMinecraft\PrismLauncher'
-# Minecraft 26.3 runs on Java 25, which the Microsoft launcher ships as its
+# Minecraft 26.2 runs on Java 25, which the Microsoft launcher ships as its
 # java-runtime-epsilon component.
 $script:JAVA_MAJOR           = 25
 $script:MANAGED_JDK_DIR      = Join-Path $env:LOCALAPPDATA "RtxRemixMinecraft\jdk-$($script:JAVA_MAJOR)"
-$script:FABRIC_API_VERSION   = '0.165.0+26.3'
+$script:FABRIC_API_VERSION   = '0.161.0+26.2'
 $script:FABRIC_LOADER_VER    = '0.20.1'
-$script:MC_VERSION           = '26.3'
+$script:MC_VERSION           = '26.2'
 $script:FABRIC_INSTALLER_VER = '1.1.2'
 # Fabric installer 1.0.x writes launcher_profiles.json using an MC-only
 # profile key, but the underlying `versions/` directory name (and the
@@ -2361,7 +2361,7 @@ function Set-MsLauncherProfileName {
     $profileObj = $json.profiles.$key
     $currentName = if ($profileObj.PSObject.Properties['name']) { $profileObj.name } else { '' }
     $defaults = @(
-        $key                                              # Fabric installer default (e.g. 'fabric-loader-26.3')
+        $key                                              # Fabric installer default (e.g. 'fabric-loader-26.2')
         ''                                                # empty name
         'fabric-loader'                                   # legacy Fabric installer default
         "fabric-loader-$($script:FABRIC_LOADER_VER)-$($script:MC_VERSION)"  # older loader-included key

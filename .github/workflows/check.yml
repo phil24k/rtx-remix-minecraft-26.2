@@ -6,7 +6,7 @@ name: check
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, "port/26.2"]
 
 permissions:
   contents: read

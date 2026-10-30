@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import TerrainState;
+import com.nvidia.rtxremix.minecraft.terrain.TerrainState;
 import org.junit.jupiter.api.Test;
 
 /**

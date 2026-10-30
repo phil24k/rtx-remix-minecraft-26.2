@@ -62,7 +62,8 @@ public final class CelestialState {
 
     /** Cloud colour as RGBA in [0, 1]; a zero alpha means the dimension draws no clouds. */
     public static Vector4fc cloudColor(float tickDelta) {
-        return probe().getValue(EnvironmentAttributes.CLOUD_COLOR, tickDelta);
+        return net.minecraft.util.ARGB.vector4fFromARGB32(
+                probe().getValue(EnvironmentAttributes.CLOUD_COLOR, tickDelta));
     }
 
     public static float cloudHeight(float tickDelta) {

@@ -220,13 +220,7 @@ public final class RemixBlockDamagePass {
 
         @Override
         public VertexConsumer setColor(int color) {
-            target.setColor(color);
-            return this;
-        }
-
-        @Override
-        public VertexConsumer setUv3(float u, float v) {
-            target.setUv3(u, v);
+            target.setColor(0xFFFFFFFF);
             return this;
         }
 

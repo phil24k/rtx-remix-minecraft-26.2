@@ -47,6 +47,14 @@ import org.jetbrains.annotations.Nullable;
  */
 public class CopperBeaconBlock extends SpotLightBlock implements EntityBlock, SimpleWaterloggedBlock {
 
+    public static final com.mojang.serialization.MapCodec<CopperBeaconBlock> CODEC =
+            simpleCodec(CopperBeaconBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<CopperBeaconBlock> codec() {
+        return CODEC;
+    }
+
     /** Registry path, also used for the block item, models, and translation key. */
     public static final String ID = "copper_beacon";
     public static final EnumProperty<Direction> MOUNT = EnumProperty.create("mount", Direction.class);

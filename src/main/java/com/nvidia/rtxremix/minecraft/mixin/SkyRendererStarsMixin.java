@@ -6,7 +6,7 @@ package com.nvidia.rtxremix.minecraft.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.renderpearl.api.vertex.VertexFormatElement;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
 import com.nvidia.rtxremix.minecraft.sky.VanillaStars;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

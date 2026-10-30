@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.imageio.ImageIO;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.resources.model.BlockModelRotation;
+import net.minecraft.client.renderer.block.dispatch.BlockModelRotation;
 import net.minecraft.core.Direction;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -67,12 +67,12 @@ class CopperBeaconBlockEntityRendererTest {
         float[] angles = {-360.0f, -180.0f, -45.0f, 0.0f, 90.0f, 360.0f};
         ModelPart yoke = CopperBeaconBlockEntityRenderer
                 .getBodyTexturedModelData()
-                .createModel()
+                .bakeRoot()
                 .getChild("yoke");
         ModelPart head = yoke.getChild("head");
         ModelPart lens = CopperBeaconBlockEntityRenderer
                 .getLensTexturedModelData()
-                .createModel()
+                .bakeRoot()
                 .getChild("lens");
         PoseStack matrices = new PoseStack();
         Vector3f headDirection = new Vector3f();
@@ -150,7 +150,7 @@ class CopperBeaconBlockEntityRendererTest {
     void headIsAChildOfTheYawFork() {
         ModelPart root = CopperBeaconBlockEntityRenderer
                 .getBodyTexturedModelData()
-                .createModel();
+                .bakeRoot();
         assertTrue(root.hasChild("yoke"));
         assertTrue(root.getChild("yoke").hasChild("head"));
         assertFalse(root.hasChild("head"));
@@ -290,11 +290,15 @@ class CopperBeaconBlockEntityRendererTest {
                     readBaseModelDirection(variant.get("model").getAsString());
             directions.put(
                     mount,
-                    BlockModelRotation.by(x, y)
-                            .actualRotation()
-                            .rotate(unrotatedDirection));
+                    rotateBaseDirection(x, y, unrotatedDirection));
         }
         return directions;
+    }
+
+    private static Direction rotateBaseDirection(int x, int y, Direction direction) {
+        for (int i = 0; i < x; i += 90) direction = com.mojang.math.OctahedralGroup.BLOCK_ROT_X_90.rotate(direction);
+        for (int i = 0; i < y; i += 90) direction = com.mojang.math.OctahedralGroup.BLOCK_ROT_Y_90.rotate(direction);
+        return direction;
     }
 
     private static Direction readBaseModelDirection(String modelId) {

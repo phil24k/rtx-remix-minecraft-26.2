@@ -2,7 +2,7 @@
     "schemaVersion": 1,
     "id": "rtx-remix-renderer",
     "version": "${version}",
-    "name": "RTX Remix for Minecraft",
+    "name": "RTX Remix for Minecraft 26.2 (Unofficial)",
     "description": "Renders Minecraft through NVIDIA RTX Remix path tracing. NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.",
     "authors": [
         "NVIDIA"
@@ -31,8 +31,8 @@
     "accessWidener": "rtx-remix-renderer.accesswidener",
     "depends": {
         "fabricloader": ">=0.20.1",
-        "fabric-api": ">=0.165.0+26.3",
-        "minecraft": "~26.3",
+        "fabric-api": ">=0.161.0+26.2",
+        "minecraft": "26.2",
         "java": ">=25"
     }
 }

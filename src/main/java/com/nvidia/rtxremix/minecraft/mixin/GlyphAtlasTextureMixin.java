@@ -7,8 +7,8 @@ package com.nvidia.rtxremix.minecraft.mixin;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.font.GlyphBitmap;
-import com.mojang.renderpearl.api.textures.GpuTexture;
-import com.mojang.renderpearl.backend.opengl.GlTexture;
+import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.opengl.GlTexture;
 import com.nvidia.rtxremix.minecraft.texture.GlyphPageMirror;
 import java.nio.ByteBuffer;
 import net.minecraft.client.gui.font.FontTexture;
@@ -51,7 +51,7 @@ public abstract class GlyphAtlasTextureMixin implements GlyphPageMirror.Owner {
     @WrapOperation(
         method = "add",
         at = @At(value = "INVOKE",
-                 target = "Lcom/mojang/blaze3d/font/GlyphBitmap;upload(IILcom/mojang/renderpearl/api/textures/GpuTexture;)V")
+                 target = "Lcom/mojang/blaze3d/font/GlyphBitmap;upload(IILcom/mojang/blaze3d/textures/GpuTexture;)V")
     )
     private void rtxremix$mirrorGlyphUpload(GlyphBitmap glyph, int x, int y, GpuTexture texture,
                                             Operation<Void> original) {

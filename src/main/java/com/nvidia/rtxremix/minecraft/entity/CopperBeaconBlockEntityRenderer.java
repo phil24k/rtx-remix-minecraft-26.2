@@ -27,7 +27,6 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.texture.UvMapping;
 import net.minecraft.client.resources.model.sprite.SpriteGetter;
 import net.minecraft.client.resources.model.sprite.SpriteId;
 import net.minecraft.core.Direction;
@@ -155,17 +154,17 @@ public final class CopperBeaconBlockEntityRenderer
                 state.yawAngle,
                 state.pitchAngle,
                 pose);
-        matrices.rotate(pose.mountingRotation());
+        matrices.mulPose(pose.mountingRotation());
         matrices.translate(-0.5, -0.5, -0.5);
         state.modelYaw = pose.modelYawRadians();
         state.modelPitch = pose.modelPitchRadians();
 
         TextureAtlasSprite copper = sprites.get(COPPER_TEXTURE);
         collector.submitModel(body, state, matrices, RenderTypes.entitySolid(TextureAtlas.LOCATION_BLOCKS),
-                state.lightCoords, OverlayTexture.NO_OVERLAY, -1, new CopperStripMapping(copper), 0);
+                state.lightCoords, OverlayTexture.NO_OVERLAY, -1, copperStrip(copper), 0, null);
         collector.submitModel(lensModel, state, matrices, RenderTypes.entitySolid(TextureAtlas.LOCATION_BLOCKS),
                 state.lightCoords, OverlayTexture.NO_OVERLAY, state.lensTint,
-                sprites.get(state.lensTexture), 0);
+                sprites.get(state.lensTexture), 0, null);
         matrices.popPose();
     }
 
@@ -247,15 +246,37 @@ public final class CopperBeaconBlockEntityRenderer
      * half, which keeps resource-pack details along the texture edges while excluding all
      * four corners, where stylized copper textures commonly place rivets.
      */
-    private record CopperStripMapping(TextureAtlasSprite sprite) implements UvMapping {
+    private TextureAtlasSprite copperSource;
+    private TextureAtlasSprite copperStrip;
+
+    private TextureAtlasSprite copperStrip(TextureAtlasSprite sprite) {
+        if (copperSource != sprite) {
+            copperSource = sprite;
+            copperStrip = new CopperStripSprite(sprite);
+        }
+        return copperStrip;
+    }
+
+    private static final class CopperStripSprite extends TextureAtlasSprite {
+        private final TextureAtlasSprite source;
+
+        CopperStripSprite(TextureAtlasSprite sprite) {
+            super(sprite.atlasLocation(), sprite.contents(),
+                    Math.round(sprite.contents().width() / (sprite.getU1() - sprite.getU0())),
+                    Math.round(sprite.contents().height() / (sprite.getV1() - sprite.getV0())),
+                    sprite.getX(), sprite.getY(),
+                    ((com.nvidia.rtxremix.minecraft.mixin.TextureAtlasSpriteAccessor) sprite).rtxremix$getPadding());
+            source = sprite;
+        }
+
         @Override
         public float getU(float offset) {
-            return sprite.getU(offset);
+            return source.getU(offset);
         }
 
         @Override
         public float getV(float offset) {
-            return sprite.getV(copperTextureV(offset));
+            return source.getV(copperTextureV(offset));
         }
     }
 }

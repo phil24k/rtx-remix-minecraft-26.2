@@ -23,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * Alt+X without Control toggles the overlay, and while its capture session is open every key
  * and character is withheld from Minecraft. Plain R toggles camera recording once an in-game
  * command has armed it, and = and - scrub time of day while recording. Injecting into
- * {@code KeyboardHandler.keyPress} runs this at SDL key-event time, so the modifier mask is
+ * {@code KeyboardHandler.keyPress} runs this at GLFW key-event time, so the modifier mask is
  * read the instant the key is pressed. Matched shortcuts cancel the event so vanilla does not
  * also handle it.
  */

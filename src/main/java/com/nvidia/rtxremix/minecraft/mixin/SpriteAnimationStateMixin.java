@@ -62,6 +62,7 @@ public abstract class SpriteAnimationStateMixin implements AnimatedSpriteOwner {
         int rowPitch = imgWidth * 4;
 
         AtlasAnimationForwarder.addPatch(contents.name(), SpritePixels.x(sprite), SpritePixels.y(sprite), srcX, srcY,
-                                         width, height, imgWidth, imgHeight, pixelPtr, rowPitch);
+                                         width, height, imgWidth, imgHeight, pixelPtr, rowPitch,
+                                         SpritePixels.x(sprite) - sprite.getX());
     }
 }

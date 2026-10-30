@@ -51,7 +51,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
-import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
 import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Final;
@@ -90,12 +90,13 @@ public abstract class WorldRendererMixin implements WorldRendererTerrainAccess {
     @Inject(method = "render", at = @At("HEAD"))
     private void rtxremix$renderHead(
             GraphicsResourceAllocator resourceAllocator,
+            net.minecraft.client.DeltaTracker deltaTracker,
             boolean renderOutline,
             CameraRenderState cameraState,
+            org.joml.Matrix4fc projectionMatrix,
             GpuBufferSlice terrainFog,
             Vector4f fogColor,
             boolean shouldRenderSky,
-            boolean consistentDepthRequired,
             CallbackInfo ci) {
         if (rtxremix$renderScope != null) {
             rtxremix$renderScope.close();
@@ -191,13 +192,12 @@ public abstract class WorldRendererMixin implements WorldRendererTerrainAccess {
             method = "submitBlockDestroyAnimation",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/renderer/SubmitNodeCollector;submitBreakingBlockModel(Lcom/mojang/blaze3d/vertex/PoseStack;Ljava/util/List;IZ)V"))
+                    target = "Lnet/minecraft/client/renderer/SubmitNodeCollector;submitBreakingBlockModel(Lcom/mojang/blaze3d/vertex/PoseStack;Ljava/util/List;I)V"))
     private void rtxremix$captureBlockDamageInPlace(
             SubmitNodeCollector collector,
             PoseStack poseStack,
             List<BlockStateModelPart> parts,
             int progress,
-            boolean translucent,
             Operation<Void> original,
             @Local BlockBreakingRenderState state) {
         RtxRemixMod mod = RtxRemixMod.getInstance();
@@ -217,7 +217,7 @@ public abstract class WorldRendererMixin implements WorldRendererTerrainAccess {
                     }
                 });
         if (!captured) {
-            original.call(collector, poseStack, parts, progress, translucent);
+            original.call(collector, poseStack, parts, progress);
         }
     }
 
