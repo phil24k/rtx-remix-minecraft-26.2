@@ -40,8 +40,10 @@ visual parity, and a full playthrough still need in-game confirmation.
 
 On Linux with a Radeon RX 7000-series GPU under Wine, the game launched, the
 renderer initialized, and a pixel probe verified the shared-image transfer
-across window resizes. The portable Linux launch (bundled Wine 11.18) passes
-its unit tests but had not completed a live game launch at release time.
+across window resizes. The released Radeon JAR also launched from a Flatpak
+launcher with no Wine setup, restarted itself under the bundled Wine 11.18 and
+Windows Java, and initialized the renderer in game. NVIDIA has not been
+re-verified with this build.
 
 ## Requirements
 
