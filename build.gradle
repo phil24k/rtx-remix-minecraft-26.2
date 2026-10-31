@@ -46,6 +46,7 @@ def isSingleArchJar = archProperty != null
 logger.lifecycle("Build target arches: ${buildArches.join(', ')}" +
         (isSingleArchJar ? " (single-arch JAR mode)" : " (fat JAR)"))
 
+ext.dlssNeuralRendering = providers.gradleProperty('dlssNeuralRendering').map { it.toBoolean() }.orElse(true).get()
 def linuxPortable = providers.gradleProperty('linux').map { it.toBoolean() }.orElse(false).get()
 if (linuxPortable && archProperty != 'win64') {
     throw new GradleException('-Plinux=true bundles Wine for x86-64 Linux and needs -Parch=win64.')
@@ -121,6 +122,9 @@ ext.sdkExclusions = { details ->
     if (name == 'NvRemixBridge.exe' || name == 'NvRemixBridge.pdb') return true
     if (name.endsWith('.pdb') && name != 'remixbridge.pdb') return true
     if (gpuTarget == 'radeon' && isDlssLibrary(name)) return true
+    // -PdlssNeuralRendering=false drops DLSS neural rendering (DLSS 5), the
+    // largest runtime file; the runtime disables the feature when it is absent.
+    if (!dlssNeuralRendering && name.toLowerCase(Locale.ROOT) == 'nvngx_dlssnr.dll') return true
     return false
 }
 
@@ -216,6 +220,8 @@ dependencies {
     // Minecraft and Fabric
     minecraft "com.mojang:minecraft:26.2"
     implementation "net.fabricmc:fabric-loader:0.20.1"
+    // Decompresses the portable Linux payload (0BSD); nested in the mod JAR.
+    include(implementation("org.tukaani:xz:1.10"))
 
     implementation fabricApiCoordinate
 
@@ -508,9 +514,9 @@ tasks.register('compileNativeArm64', Exec) {
 }
 
 // Portable Linux payload (-Plinux=true): Wine, Windows Java, and Windows LWJGL
-// natives, pinned by SHA-256 in linux/portable-runtime.properties. The Wine
-// tarball is decompressed to a plain tar so LinuxWineLauncher can extract it,
-// symlinks and executable bits intact, with only the JDK.
+// natives, pinned by SHA-256 in linux/portable-runtime.properties. Wine and
+// Java are stored as tar.xz, which keeps Wine's symlinks and executable bits.
+// The build needs bash, tar, xz, and unzip.
 def linuxPinsFile = file('linux/portable-runtime.properties')
 def linuxPayloadDir = layout.buildDirectory.dir('linux-portable').get().asFile
 def fetchLinuxPortableRuntimeTask = tasks.register('fetchLinuxPortableRuntime') {
@@ -551,16 +557,31 @@ def fetchLinuxPortableRuntimeTask = tasks.register('fetchLinuxPortableRuntime') 
         def stage = new File(linuxPayloadDir, 'payload/linux')
         project.delete(stage)
         stage.mkdirs()
-        def wineArchive = fetch(pins['wine.url'], pins['wine.sha256'], 'wine.tar.xz')
-        def wineTar = new File(stage, 'wine.tar')
-        wineTar.withOutputStream { out ->
-            def process = new ProcessBuilder('xz', '-dc', wineArchive.absolutePath).start()
-            process.consumeProcessErrorStream(System.err)
-            out << process.inputStream
-            if (process.waitFor() != 0) throw new GradleException('xz could not decompress the Wine archive')
+        // Wine: drop 32-bit Windows support (Java is 64-bit) and the C headers,
+        // then recompress with xz. Java: repack the zip as tar.xz. Both are
+        // extracted at run time by LinuxWineLauncher through XZ for Java.
+        def repack = { File source, String output, String unpackCommand, List<String> prune ->
+            def work = new File(linuxPayloadDir, 'work')
+            project.delete(work)
+            work.mkdirs()
+            def script = """
+                set -euo pipefail
+                cd '${work}'
+                ${unpackCommand.replace('SRC', source.absolutePath)}
+                top=\$(ls)
+                ${prune.collect { "rm -rf \"\$top/${it}\"" }.join('\n')}
+                tar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 -cf - "\$top" \\
+                    | xz -T0 -9 > '${new File(stage, output)}'
+            """
+            def process = new ProcessBuilder('bash', '-c', script).redirectErrorStream(true).start()
+            def log = process.inputStream.text
+            if (process.waitFor() != 0) throw new GradleException("Repacking ${source.name} failed:\n${log}")
+            project.delete(work)
         }
-        java.nio.file.Files.copy(fetch(pins['jre.url'], pins['jre.sha256'], 'jre.zip').toPath(),
-                new File(stage, 'jre.zip').toPath())
+        repack(fetch(pins['wine.url'], pins['wine.sha256'], 'wine.tar.xz'), 'wine.tar.xz',
+               'tar -xJf SRC', ['include', 'lib/wine/i386-windows'])
+        repack(fetch(pins['jre.url'], pins['jre.sha256'], 'jre.zip'), 'jre.tar.xz',
+               'unzip -q SRC', [])
         def natives = new File(stage, 'natives')
         natives.mkdirs()
         def lwjglVersion = pins['lwjgl.version']
@@ -698,7 +719,7 @@ def verifyPackageJarTask = tasks.register('verifyPackageJar') {
                 required.add("native/textures/${name}")
             }
             if (linuxPortable) {
-                required.addAll(['linux/portable-runtime.properties', 'linux/wine.tar', 'linux/jre.zip',
+                required.addAll(['linux/portable-runtime.properties', 'linux/wine.tar.xz', 'linux/jre.tar.xz',
                                  'linux/natives/lwjgl.dll', 'linux/natives/glfw.dll'])
             }
             def payloadEntries = { File dir, String jarPrefix ->

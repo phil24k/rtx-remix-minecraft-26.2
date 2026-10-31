@@ -4,11 +4,14 @@ A Fabric port of NVIDIA's Minecraft RTX Remix beta to Minecraft Java 26.2.
 It renders the game through NVIDIA's RTX Remix runtime with path tracing,
 reflections, and upscaling, on Windows and Linux, with NVIDIA or AMD Radeon GPUs.
 
-**[Download the universal JAR - Preview 4 (Windows + Linux, NVIDIA + Radeon)](https://github.com/phil24k/rtx-remix-minecraft-26.2/releases/download/v0.1.0-mc26.2-preview.4/rtx-remix-renderer-0.1.0-mc26.2-preview.4-universal.jar)**
+Download from the [Preview 5 release](https://github.com/phil24k/rtx-remix-minecraft-26.2/releases/tag/v0.1.0-mc26.2-preview.5).
+Every JAR runs on Windows and Linux; pick one:
 
-A smaller [Radeon JAR](https://github.com/phil24k/rtx-remix-minecraft-26.2/releases/download/v0.1.0-mc26.2-preview.4/rtx-remix-renderer-0.1.0-mc26.2-preview.4-radeon.jar)
-leaves out the DLSS libraries. Both run on Windows and Linux.
-[Release notes and checksums](https://github.com/phil24k/rtx-remix-minecraft-26.2/releases/tag/v0.1.0-mc26.2-preview.4)
+| JAR | For | Size |
+| --- | --- | --- |
+| **[NVIDIA](https://github.com/phil24k/rtx-remix-minecraft-26.2/releases/download/v0.1.0-mc26.2-preview.5/rtx-remix-renderer-0.1.0-mc26.2-preview.5-nvidia.jar)** | NVIDIA GPUs. DLSS, Ray Reconstruction, and Frame Generation on Windows. | 498 MiB |
+| [NVIDIA + DLSS 5](https://github.com/phil24k/rtx-remix-minecraft-26.2/releases/download/v0.1.0-mc26.2-preview.5/rtx-remix-renderer-0.1.0-mc26.2-preview.5-nvidia-dlss5.jar) | Same, plus DLSS neural rendering (DLSS 5). | 678 MiB |
+| **[Radeon](https://github.com/phil24k/rtx-remix-minecraft-26.2/releases/download/v0.1.0-mc26.2-preview.5/rtx-remix-renderer-0.1.0-mc26.2-preview.5-radeon.jar)** | AMD Radeon GPUs (no DLSS libraries). Also runs on NVIDIA without DLSS. | 444 MiB |
 
 This is an unofficial community port. NVIDIA does not maintain or support it.
 The original project is **[NVIDIA RTX Remix for Minecraft](https://github.com/NVIDIAGameWorks/rtx-remix-minecraft)**.
@@ -40,7 +43,7 @@ replacements. Use a separate game instance for it.
 On **Linux**, nothing else is needed: the JAR carries its own Wine and Windows
 Java. Before Minecraft opens its window, the mod restarts the game under them
 with the launcher's own command line, and the launcher keeps tracking the game
-as usual. The first Linux launch also unpacks about 1 GB to
+as usual. The first Linux launch also unpacks about 650 MB to
 `~/.local/share/rtx-remix-minecraft/portable/` (inside a Flatpak launcher, its
 app data folder) and takes noticeably longer. To start without the renderer,
 add `-Drtxremix.linux.wine=false` to the instance's JVM arguments. Details are
@@ -126,10 +129,12 @@ Package options:
 | --- | --- |
 | `-Pgpu=nvidia` (default) | Includes the DLSS libraries. |
 | `-Pgpu=radeon` | Leaves out the DLSS libraries; adds `-radeon` to the name. |
-| `-Plinux=true` | Bundles Wine, Windows Java, and Windows LWJGL natives (pinned by SHA-256 in `linux/portable-runtime.properties`); adds `-linux`. Needs `-Parch=win64` and `xz`. |
+| `-Plinux=true` | Bundles Wine (64-bit parts only), Windows Java, and Windows LWJGL natives, pinned by SHA-256 in `linux/portable-runtime.properties`; adds `-linux`. Needs `-Parch=win64`, bash, tar, xz, and unzip. |
+| `-PdlssNeuralRendering=false` | Leaves out DLSS neural rendering (DLSS 5), the largest runtime file. |
 
-The release's universal JAR is `-Pgpu=nvidia -Plinux=true`; the Radeon JAR is
-`-Pgpu=radeon -Plinux=true`. The AMD texture workaround is selected at run time
+The release JARs all use `-Plinux=true`: NVIDIA adds
+`-PdlssNeuralRendering=false`, NVIDIA + DLSS 5 uses the defaults, and Radeon
+adds `-Pgpu=radeon`. The AMD texture workaround is selected at run time
 in every package. Packaged JARs are written to `build/distributions/`; the
 lightweight JAR in `build/libs/` has no native runtime and cannot be installed.
 

@@ -10,11 +10,12 @@ import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tukaani.xz.XZInputStream;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
@@ -32,8 +33,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 /**
  * Makes the portable Linux JAR work from any launcher. The renderer is a Windows
@@ -111,7 +110,7 @@ public final class LinuxWineLauncher implements PreLaunchEntrypoint {
     /** Extracts the payload once per payload version and returns its directory. */
     private static Path prepareRuntime(ModContainer mod, Path pinsFile) throws IOException {
         byte[] pins = Files.readAllBytes(pinsFile);
-        String id = sha256(pins).substring(0, 12);
+        String id = payloadId(mod, pins);
         Path base = dataHome().resolve("rtx-remix-minecraft").resolve("portable");
         Path runtime = base.resolve(id);
         Files.createDirectories(base);
@@ -126,12 +125,8 @@ public final class LinuxWineLauncher implements PreLaunchEntrypoint {
             Path staging = base.resolve(id + ".partial");
             deleteRecursively(staging);
             Files.createDirectories(staging);
-            try (InputStream in = Files.newInputStream(mod.findPath(PAYLOAD + "wine.tar").orElseThrow())) {
-                TarExtractor.extract(in, staging.resolve("wine"), 1);
-            }
-            try (InputStream in = Files.newInputStream(mod.findPath(PAYLOAD + "jre.zip").orElseThrow())) {
-                extractZip(in, staging.resolve("jre"), 1);
-            }
+            extractTarXz(mod.findPath(PAYLOAD + "wine.tar.xz").orElseThrow(), staging.resolve("wine"));
+            extractTarXz(mod.findPath(PAYLOAD + "jre.tar.xz").orElseThrow(), staging.resolve("jre"));
             Path nativesSource = mod.findPath(PAYLOAD + "natives").orElseThrow();
             Path natives = Files.createDirectories(staging.resolve("natives"));
             try (DirectoryStream<Path> dlls = Files.newDirectoryStream(nativesSource)) {
@@ -249,22 +244,9 @@ public final class LinuxWineLauncher implements PreLaunchEntrypoint {
         }
     }
 
-    static void extractZip(InputStream in, Path destination, int stripComponents) throws IOException {
-        Path root = destination.toAbsolutePath().normalize();
-        try (ZipInputStream zip = new ZipInputStream(in)) {
-            ZipEntry entry;
-            while ((entry = zip.getNextEntry()) != null) {
-                Path target = TarExtractor.resolve(root, entry.getName(), stripComponents);
-                if (target == null) continue;
-                if (entry.isDirectory()) {
-                    Files.createDirectories(target);
-                } else {
-                    Files.createDirectories(target.getParent());
-                    try (OutputStream out = Files.newOutputStream(target)) {
-                        zip.transferTo(out);
-                    }
-                }
-            }
+    private static void extractTarXz(Path archive, Path destination) throws IOException {
+        try (InputStream in = new XZInputStream(new BufferedInputStream(Files.newInputStream(archive), 1 << 16))) {
+            TarExtractor.extract(new BufferedInputStream(in, 1 << 16), destination, 1);
         }
     }
 
@@ -294,6 +276,20 @@ public final class LinuxWineLauncher implements PreLaunchEntrypoint {
                 Files.deleteIfExists(path);
             }
         }
+    }
+
+    /**
+     * Names the extraction directory after the payload actually in the JAR, not
+     * only its pins: a repacked payload with unchanged pins (for example, a
+     * slimmer Wine) must not reuse an older extraction.
+     */
+    static String payloadId(ModContainer mod, byte[] pins) throws IOException {
+        StringBuilder key = new StringBuilder(new String(pins, StandardCharsets.UTF_8));
+        for (String name : new String[] {"wine.tar.xz", "jre.tar.xz"}) {
+            Path entry = mod.findPath(PAYLOAD + name).orElseThrow(() -> new IOException("Missing " + name));
+            key.append('\n').append(name).append('=').append(Files.size(entry));
+        }
+        return sha256(key.toString().getBytes(StandardCharsets.UTF_8)).substring(0, 12);
     }
 
     private static String sha256(byte[] data) {

@@ -135,9 +135,10 @@ reproduced in this repository.
 
 ## Linux payload (portable `-linux` release JARs)
 
-JARs built with `-Plinux=true` (the release's universal and Radeon JARs) also
-bundle, under `linux/` inside the JAR, unmodified binaries pinned by SHA-256 in
-`linux/portable-runtime.properties`:
+JARs built with `-Plinux=true` (all release JARs) also bundle, under `linux/`
+inside the JAR, binaries pinned by SHA-256 in `linux/portable-runtime.properties`.
+They are not modified; the build only leaves out Wine's 32-bit Windows
+libraries and C headers and recompresses Wine and Java as tar.xz:
 
 - **Wine 11.18**, LGPL-2.1 or later, as built by
   [Kron4ek/Wine-Builds](https://github.com/Kron4ek/Wine-Builds) (build scripts
@@ -147,7 +148,9 @@ bundle, under `linux/` inside the JAR, unmodified binaries pinned by SHA-256 in
 - **Eclipse Temurin JRE 25.0.5+8** for Windows x64 (Eclipse Adoptium),
   GPL-2.0 with the Classpath Exception. Source:
   <https://github.com/adoptium/jdk25u> at tag `jdk-25.0.5+8`. Its license and
-  third-party notices are inside the bundled `jre.zip` (`legal/`).
+  third-party notices are inside the bundled `jre.tar.xz` (`legal/`).
+- **XZ for Java 1.10** (<https://github.com/tukaani-project/xz-java>), 0BSD,
+  nested in every JAR to decompress this payload.
 - **LWJGL 3.4.1 Windows natives**, BSD-3-Clause
   (<https://github.com/LWJGL/lwjgl3>), including the native libraries LWJGL
   distributes: GLFW (zlib), OpenAL Soft (LGPL-2.0 or later, source at

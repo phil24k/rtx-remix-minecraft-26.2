@@ -12,8 +12,8 @@ through a launcher wrapper (`linux/lunar_wine.py`) also ran the game. NVIDIA on 
 
 ## Portable JAR (recommended)
 
-The release JARs carry their own Wine, Windows Java, and Windows LWJGL
-natives, pinned by SHA-256 in `linux/portable-runtime.properties`. Put one with
+The release JARs carry their own Wine (its 64-bit parts, xz-compressed),
+Windows Java, and Windows LWJGL natives, pinned by SHA-256 in `linux/portable-runtime.properties`. Put one with
 Fabric API into any launcher's Minecraft 26.2 Fabric instance; no wrapper
 command or system Wine is needed, and Flatpak launchers work because nothing
 outside the sandbox is used. Build one with
@@ -22,7 +22,7 @@ the build needs `xz`.
 
 On x86-64 Linux, `LinuxWineLauncher` runs as the first pre-launch entrypoint,
 extracts the payload once to `$XDG_DATA_HOME/rtx-remix-minecraft/portable/`
-(about 1 GB), and restarts the game, before Minecraft opens a window, as
+(about 650 MB), and restarts the game, before Minecraft opens a window, as
 Windows Java under the bundled Wine with the launcher's own command line. The
 Linux JVM waits as the parent and exits with the game's exit code. Set
 `-Drtxremix.linux.wine=false` or `RTXREMIX_LINUX_WINE=0` to stay on Linux

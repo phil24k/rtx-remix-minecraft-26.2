@@ -14,8 +14,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -113,18 +111,6 @@ class LinuxWineLauncherTest {
         link.write(new byte[1024]);
         assertThrows(IOException.class, () -> TarExtractor.extract(
                 new ByteArrayInputStream(link.toByteArray()), temp.resolve("out2"), 1));
-    }
-
-    @Test
-    void extractsZipStrippingTopDirectory() throws IOException {
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        try (ZipOutputStream zip = new ZipOutputStream(bytes)) {
-            zip.putNextEntry(new ZipEntry("jdk-25-jre/bin/java.exe"));
-            zip.write("MZ".getBytes());
-            zip.closeEntry();
-        }
-        LinuxWineLauncher.extractZip(new ByteArrayInputStream(bytes.toByteArray()), temp.resolve("jre"), 1);
-        assertEquals("MZ", Files.readString(temp.resolve("jre/bin/java.exe")));
     }
 
     private static void writeEntry(ByteArrayOutputStream out, String name, char type, int mode,
