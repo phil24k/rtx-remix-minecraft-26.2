@@ -3,6 +3,10 @@
 A Windows x64 Fabric port of NVIDIA's Minecraft RTX Remix beta to Minecraft Java 26.2.
 It uses NVIDIA's RTX Remix runtime for path tracing, DLSS, and reflections.
 
+**[Download the installable JAR - Preview 3 (Windows x64)](https://github.com/phil24k/rtx-remix-minecraft-26.2/releases/download/v0.1.0-mc26.2-preview.3/rtx-remix-renderer-0.1.0-mc26.2-202610302236-87ff072-win64.jar)**
+
+[Release notes and installation steps](https://github.com/phil24k/rtx-remix-minecraft-26.2/releases/tag/v0.1.0-mc26.2-preview.3)
+
 This is an unofficial community port. NVIDIA does not maintain or support it.
 The original project is **[NVIDIA RTX Remix for Minecraft](https://github.com/NVIDIAGameWorks/rtx-remix-minecraft)**.
 NVIDIA developed the original mod, JNI bridge, and native rendering runtime.
