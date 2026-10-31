@@ -133,6 +133,33 @@ Toolkit EULA, whose redistribution terms cover these runtime libraries. That
 text is published at <https://docs.nvidia.com/cuda/eula/> and is not
 reproduced in this repository.
 
+## Linux payload (portable `-linux` release JARs)
+
+JARs built with `-Plinux=true` (the release's universal and Radeon JARs) also
+bundle, under `linux/` inside the JAR, unmodified binaries pinned by SHA-256 in
+`linux/portable-runtime.properties`:
+
+- **Wine 11.18**, LGPL-2.1 or later, as built by
+  [Kron4ek/Wine-Builds](https://github.com/Kron4ek/Wine-Builds) (build scripts
+  in that repository). Corresponding source:
+  <https://dl.winehq.org/wine/source/11.x/wine-11.18.tar.xz>. License text (also inside the JAR):
+  - [packaging/licenses/linux/wine-COPYING.LIB](packaging/licenses/linux/wine-COPYING.LIB)
+- **Eclipse Temurin JRE 25.0.5+8** for Windows x64 (Eclipse Adoptium),
+  GPL-2.0 with the Classpath Exception. Source:
+  <https://github.com/adoptium/jdk25u> at tag `jdk-25.0.5+8`. Its license and
+  third-party notices are inside the bundled `jre.zip` (`legal/`).
+- **LWJGL 3.4.1 Windows natives**, BSD-3-Clause
+  (<https://github.com/LWJGL/lwjgl3>), including the native libraries LWJGL
+  distributes: GLFW (zlib), OpenAL Soft (LGPL-2.0 or later, source at
+  <https://github.com/kcat/openal-soft>), FreeType (FreeType License), jemalloc
+  (BSD-2-Clause), shaderc and SPIRV-Cross (Apache-2.0), and stb, tinyfiledialogs,
+  and Vulkan Memory Allocator (MIT or public domain). License texts:
+  <https://github.com/LWJGL/lwjgl3/tree/master/doc/notice>.
+
+These components keep their own licenses; the Apache-2.0 license of this mod
+does not apply to them. They run as separate programs and libraries and can be
+replaced: the pins file selects them at build time.
+
 ## Runtime dependencies that are NOT distributed with this project
 
 The following are required at runtime but are not contained in this

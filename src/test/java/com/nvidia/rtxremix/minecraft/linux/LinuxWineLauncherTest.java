@@ -30,7 +30,7 @@ class LinuxWineLauncherTest {
     @Test
     void convertsPathsClasspathAndNativesForWindowsJava() throws IOException {
         Path argFile = temp.resolve("args.txt");
-        Files.writeString(argFile, "-Dfoo=\"a b\" --gameDir '/home/me/My Game'\n");
+        Files.writeString(argFile, "-Dfoo=\"a b\" --gameDir '/srv/me/My Game'\n");
         List<String> converted = WineCommandLine.convert(List.of(
                         "-Xmx4G",
                         "-Djava.library.path=/tmp/linux-natives",
@@ -39,17 +39,17 @@ class LinuxWineLauncherTest {
                         "-Dfabric.gameJarPath=/mc/client.jar",
                         "net.fabricmc.loader.impl.launch.knot.KnotClient",
                         "@" + argFile),
-                Path.of("/data/natives"), "/home/me", List.of());
+                Path.of("/data/natives"), "/srv/me", List.of());
         assertEquals(List.of(
                 "-Djava.library.path=Z:/data/natives",
                 "-Dorg.lwjgl.librarypath=Z:/data/natives",
-                "-Duser.home=Z:/home/me",
+                "-Duser.home=Z:/srv/me",
                 "-Xmx4G",
                 "-cp", "Z:/a/one.jar;Z:/b/two.jar",
                 "-javaagent:Z:/agents/agent.jar",
                 "-Dfabric.gameJarPath=Z:/mc/client.jar",
                 "net.fabricmc.loader.impl.launch.knot.KnotClient",
-                "-Dfoo=a b", "--gameDir", "Z:/home/me/My Game"), converted);
+                "-Dfoo=a b", "--gameDir", "Z:/srv/me/My Game"), converted);
     }
 
     @Test

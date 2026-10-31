@@ -30,6 +30,16 @@ SPDX_LICENSE_LINE = "SPDX-License-Identifier: Apache-2.0"
 # Release compliance review requires this exact entity, trailing period included.
 NVIDIA_ENTITY = "NVIDIA CORPORATION & AFFILIATES. All rights reserved."
 
+# Files imported from other projects keep their authors' copyright line;
+# naming NVIDIA on them would misattribute the code. The Radeon CPU-mipmap
+# files come from quartz1216/rtx-remix-minecraft-radeon (docs/SOURCE_REVIEW.md).
+THIRD_PARTY_COPYRIGHT_SOURCES = {
+    "src/main/java/com/nvidia/rtxremix/minecraft/texture/CpuMipTextures.java",
+    "src/main/java/com/nvidia/rtxremix/minecraft/texture/DdsMipWriter.java",
+    "src/test/java/com/nvidia/rtxremix/minecraft/texture/CpuMipTexturesTest.java",
+    "src/test/java/com/nvidia/rtxremix/minecraft/texture/DdsMipWriterTest.java",
+}
+
 # The copyright line that must sit above the Apache body in the root LICENSE.
 LICENSE_FIRST_LINE = f"Copyright (c) 2024-2026 {NVIDIA_ENTITY}"
 
@@ -154,6 +164,8 @@ class SourceHeaderTests(unittest.TestCase):
         # period included, so "NVIDIA CORPORATION" alone or a missing period fails.
         offenders = []
         for name in headered_sources():
+            if name in THIRD_PARTY_COPYRIGHT_SOURCES:
+                continue
             text = read_text(REPO_ROOT / name)
             if "SPDX-FileCopyrightText" in text and NVIDIA_ENTITY not in text:
                 offenders.append(name)

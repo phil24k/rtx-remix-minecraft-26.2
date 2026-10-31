@@ -62,12 +62,11 @@ Radeon GPU Detective. The CPU workaround repairs the initial mip chain, but
 the runtime still regenerates animation patches on the GPU: distant animated
 blocks can therefore remain on their initial frame.
 
-This 26.2 integration requires an in-game test on both vendors before being
-called verified GPU support. CPU DDS tests and Java compilation cannot prove
-that the native renderer initializes, displays correct pixels, or survives
-resource reloads. No new live Radeon or NVIDIA rendering result is claimed.
+On Linux, a Radeon RX 7000-series GPU with Mesa 26.2.2 ran the game in a
+multiplayer world through the bundled Wine with the renderer active. Fixing
+that required importing the shared images as dedicated allocations; without
+it Radeon showed scrambled output. Radeon on Windows has not been tested with
+this port, and resource reloads and long sessions still need more testing.
 
-Linux uses the experimental [Wine route](LINUX.md). A low-level Radeon RX 7000-series
-diagnostic passed real device startup and three shared-image frame round trips;
-this is not a Minecraft gameplay test. A native Linux runtime is not supplied
-by either repository.
+Linux setup is described in [Linux](LINUX.md). A native Linux runtime is not
+supplied by any of the repositories involved.
