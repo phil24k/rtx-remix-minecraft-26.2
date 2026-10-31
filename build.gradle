@@ -37,11 +37,21 @@ if (archProperty && !(archProperty in ['win64', 'arm64'])) {
         "(or omit for dual-arch fat JAR).")
 }
 def buildArches = archProperty ? [archProperty] : ['win64', 'arm64']
+def windowsHost = System.getProperty('os.name').startsWith('Windows')
+def gpuTarget = providers.gradleProperty('gpu').orElse('nvidia').get()
+if (!(gpuTarget in ['nvidia', 'radeon'])) {
+    throw new GradleException("Invalid -Pgpu value: '${gpuTarget}'. Use nvidia or radeon.")
+}
 def isSingleArchJar = archProperty != null
 logger.lifecycle("Build target arches: ${buildArches.join(', ')}" +
         (isSingleArchJar ? " (single-arch JAR mode)" : " (fat JAR)"))
 
-def archSuffix = isSingleArchJar ? "-${archProperty}" : ''
+def linuxPortable = providers.gradleProperty('linux').map { it.toBoolean() }.orElse(false).get()
+if (linuxPortable && archProperty != 'win64') {
+    throw new GradleException('-Plinux=true bundles Wine for x86-64 Linux and needs -Parch=win64.')
+}
+def archSuffix = (isSingleArchJar ? "-${archProperty}" : '') + (gpuTarget == 'radeon' ? '-radeon' : '') +
+        (linuxPortable ? '-linux' : '')
 version = "${baseVersion}-${buildTimestamp}-${gitShortHash.get()}${gitDirty.get()}${archSuffix}"
 def resolvedBuildVersion = version.toString()
 group = 'com.nvidia.rtxremix'
@@ -110,7 +120,12 @@ ext.sdkExclusions = { details ->
     def name = details.name
     if (name == 'NvRemixBridge.exe' || name == 'NvRemixBridge.pdb') return true
     if (name.endsWith('.pdb') && name != 'remixbridge.pdb') return true
+    if (gpuTarget == 'radeon' && isDlssLibrary(name)) return true
     return false
+}
+
+static boolean isDlssLibrary(String name) {
+    return name.toLowerCase(Locale.ROOT) ==~ /nvngx_dlss[^\/]*\.dll/
 }
 
 base {
@@ -295,8 +310,13 @@ def fetchRuntimeSdkTasks = ['win64', 'arm64'].collectEntries { arch ->
                 logger.lifecycle("Pulling remix-sdk-${arch} -> ${targetDir}")
                 runtimeFetchServices.execOperations.exec {
                     workingDir packmanDirectory
-                    commandLine 'cmd', '/d', '/c', new File(packmanDirectory, 'packman.cmd').absolutePath,
-                            'pull', temporaryManifest.absolutePath, '-p', 'windows-x86_64'
+                    if (windowsHost) {
+                        commandLine 'cmd', '/d', '/c', new File(packmanDirectory, 'packman.cmd').absolutePath,
+                                'pull', temporaryManifest.absolutePath, '-p', 'windows-x86_64'
+                    } else {
+                        commandLine 'bash', new File(packmanDirectory, 'packman').absolutePath,
+                                'pull', temporaryManifest.absolutePath, '-p', 'windows-x86_64'
+                    }
                 }
             } finally {
                 temporaryManifest.delete()
@@ -370,7 +390,11 @@ def fetchRuntimeTexturesTask = tasks.register('fetchRuntimeTextures', Exec) {
     // spaces, and cmd skips the current folder for a bare name when
     // NoDefaultCurrentDirectoryInExePath is set.
     workingDir file('packman')
-    commandLine 'cmd', '/d', '/c', '.\\packman.cmd', 'pull', manifest.absolutePath
+    if (windowsHost) {
+        commandLine 'cmd', '/d', '/c', '.\\packman.cmd', 'pull', manifest.absolutePath
+    } else {
+        commandLine 'bash', './packman', 'pull', manifest.absolutePath
+    }
     def legacyLink = file('packaging/textures').toPath()
     def texturesDir = file(runtimeTexturesDir)
     doFirst {
@@ -438,7 +462,9 @@ tasks.register('setupRuntime') {
 }
 
 tasks.named('classes') {
-    dependsOn 'setupRuntime'
+    // Headless compilation and JVM tests do not load JNI. Windows development
+    // retains automatic staging; Linux runs the packaged Windows build via Wine.
+    if (windowsHost) dependsOn 'setupRuntime'
 }
 
 // A development launcher instance loads mods as a player's install does, so it
@@ -479,6 +505,78 @@ tasks.register('compileNativeArm64', Exec) {
                  file('rtxremix-java/native/include/remix_c.h')
     outputs.files file('build/native/arm64/remixbridge.dll'),
                   file('build/native/arm64/remixbridge.pdb')
+}
+
+// Portable Linux payload (-Plinux=true): Wine, Windows Java, and Windows LWJGL
+// natives, pinned by SHA-256 in linux/portable-runtime.properties. The Wine
+// tarball is decompressed to a plain tar so LinuxWineLauncher can extract it,
+// symlinks and executable bits intact, with only the JDK.
+def linuxPinsFile = file('linux/portable-runtime.properties')
+def linuxPayloadDir = layout.buildDirectory.dir('linux-portable').get().asFile
+def fetchLinuxPortableRuntimeTask = tasks.register('fetchLinuxPortableRuntime') {
+    description = 'Downloads and verifies the pinned Wine, Windows Java, and LWJGL natives for the portable Linux JAR'
+    group = 'build'
+    inputs.file(linuxPinsFile)
+    outputs.dir(linuxPayloadDir)
+    doLast {
+        def pins = new Properties()
+        linuxPinsFile.withInputStream { pins.load(it) }
+        def downloads = new File(linuxPayloadDir, 'downloads')
+        downloads.mkdirs()
+        def sha256 = { File f ->
+            def digest = java.security.MessageDigest.getInstance('SHA-256')
+            f.withInputStream { stream ->
+                byte[] buffer = new byte[1 << 16]
+                int read
+                while ((read = stream.read(buffer)) > 0) digest.update(buffer, 0, read)
+            }
+            digest.digest().encodeHex().toString()
+        }
+        def fetch = { String url, String expected, String name ->
+            def target = new File(downloads, name)
+            if (!target.exists() || sha256(target) != expected) {
+                logger.lifecycle("Downloading ${url}")
+                def partial = new File(downloads, name + '.part')
+                new URL(url).withInputStream { input -> partial.withOutputStream { it << input } }
+                def actual = sha256(partial)
+                if (actual != expected) {
+                    partial.delete()
+                    throw new GradleException("SHA-256 mismatch for ${url}: expected ${expected}, got ${actual}")
+                }
+                java.nio.file.Files.move(partial.toPath(), target.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+            }
+            target
+        }
+        def stage = new File(linuxPayloadDir, 'payload/linux')
+        project.delete(stage)
+        stage.mkdirs()
+        def wineArchive = fetch(pins['wine.url'], pins['wine.sha256'], 'wine.tar.xz')
+        def wineTar = new File(stage, 'wine.tar')
+        wineTar.withOutputStream { out ->
+            def process = new ProcessBuilder('xz', '-dc', wineArchive.absolutePath).start()
+            process.consumeProcessErrorStream(System.err)
+            out << process.inputStream
+            if (process.waitFor() != 0) throw new GradleException('xz could not decompress the Wine archive')
+        }
+        java.nio.file.Files.copy(fetch(pins['jre.url'], pins['jre.sha256'], 'jre.zip').toPath(),
+                new File(stage, 'jre.zip').toPath())
+        def natives = new File(stage, 'natives')
+        natives.mkdirs()
+        def lwjglVersion = pins['lwjgl.version']
+        pins.stringPropertyNames().findAll { it.startsWith('natives.') }.sort().each { key ->
+            def module = key.substring('natives.'.length())
+            def url = "https://repo1.maven.org/maven2/org/lwjgl/${module}/${lwjglVersion}/${module}-${lwjglVersion}-natives-windows.jar"
+            def nativesJar = fetch(url, pins[key], "${module}-natives-windows.jar")
+            project.copy {
+                from(zipTree(nativesJar)) { include 'windows/x64/**/*.dll' }
+                into natives
+                eachFile { it.path = it.name }
+                includeEmptyDirs = false
+            }
+        }
+        java.nio.file.Files.copy(linuxPinsFile.toPath(), new File(stage, 'portable-runtime.properties').toPath())
+    }
 }
 
 jar {
@@ -548,6 +646,11 @@ def packageJarTask = tasks.register('packageJar', Zip) {
         }
     }
 
+    if (linuxPortable) {
+        zip64 = true
+        dependsOn fetchLinuxPortableRuntimeTask
+        from(new File(linuxPayloadDir, 'payload'))
+    }
     from("packaging/rtx.conf") {
         into("native")
     }
@@ -594,6 +697,10 @@ def verifyPackageJarTask = tasks.register('verifyPackageJar') {
             runtimeTextureFiles.each { name ->
                 required.add("native/textures/${name}")
             }
+            if (linuxPortable) {
+                required.addAll(['linux/portable-runtime.properties', 'linux/wine.tar', 'linux/jre.zip',
+                                 'linux/natives/lwjgl.dll', 'linux/natives/glfw.dll'])
+            }
             def payloadEntries = { File dir, String jarPrefix ->
                 fileTree(dir).files.collect { payloadFile ->
                     jarPrefix + dir.toPath().relativize(payloadFile.toPath()).toString().replace('\\', '/')
@@ -622,6 +729,14 @@ def verifyPackageJarTask = tasks.register('verifyPackageJar') {
             // interpreter or the USD Python bindings in the payload would be unused
             // code that binary vulnerability scanners flag against the release.
             def pythonEntry = ~/(?i)native\/remix-sdk-[^\/]+\/(.*\/)?([^\/]*python[^\/]*\.dll|[^\/]*\.(pyd|pyc)|python\d*(\.\d+)?\/.*)/
+            if (gpuTarget == 'radeon') {
+                def dlssOffender = entryNames.find {
+                    it.startsWith('native/remix-sdk-') && isDlssLibrary(it.tokenize('/').last())
+                }
+                if (dlssOffender != null) {
+                    throw new GradleException("Radeon JAR must not contain DLSS libraries: ${dlssOffender}")
+                }
+            }
             def pythonOffender = entryNames.find { it ==~ pythonEntry }
             if (pythonOffender != null) {
                 throw new GradleException(

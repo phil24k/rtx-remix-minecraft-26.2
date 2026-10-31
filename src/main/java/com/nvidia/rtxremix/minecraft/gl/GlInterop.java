@@ -38,6 +38,8 @@ public final class GlInterop {
     private long clientDoneSemaphoreValue;
     private int[] barrierTextures = new int[0];
     private int[] barrierLayouts = new int[0];
+    /** Read framebuffer over the frame texture Minecraft presents, created on first use. */
+    private int sourceFbo;
 
     public GlInterop(InteropInfo interopInfo) {
         if (interopInfo.dxvkDoneSemaphore_Handle == 0
@@ -147,6 +149,41 @@ public final class GlInterop {
     }
 
     /**
+     * Copies the texture Minecraft presents into the Remix colour image, scaling it when
+     * the sizes differ for the frame of a resize. Preferred over the default framebuffer:
+     * under Wine that framebuffer keeps the window's original size once Vulkan owns the
+     * window's swapchain, because the GL buffer swap that would resize it never runs.
+     */
+    public void copyFromTexture(int sourceTexture, int sourceWidth, int sourceHeight) {
+        drainStaleGlErrors();
+        if (!colorImage.available() || sourceTexture == 0 || sourceWidth <= 0 || sourceHeight <= 0) {
+            return;
+        }
+        if (sourceFbo == 0) {
+            sourceFbo = glCreateFramebuffers();
+        }
+        // Reattached every frame: Minecraft replaces the texture on resize, and a
+        // deleted texture's name can be reused.
+        glNamedFramebufferTexture(sourceFbo, GL_COLOR_ATTACHMENT0, sourceTexture, 0);
+        boolean sameSize = sourceWidth == colorImage.width && sourceHeight == colorImage.height;
+        glBlitNamedFramebuffer(
+                sourceFbo,
+                colorImage.framebuffer(),
+                0,
+                0,
+                sourceWidth,
+                sourceHeight,
+                0,
+                0,
+                colorImage.width,
+                colorImage.height,
+                GL_COLOR_BUFFER_BIT,
+                sameSize ? GL_NEAREST : GL_LINEAR);
+        glNamedFramebufferTexture(sourceFbo, GL_COLOR_ATTACHMENT0, 0, 0);
+        checkGlError("glBlitNamedFramebuffer(texture)");
+    }
+
+    /**
      * Blits the Remix colour image onto a framebuffer of the given size. The image's
      * first row is its top, so the copy flips it onto OpenGL's bottom-up framebuffer.
      */
@@ -192,6 +229,10 @@ public final class GlInterop {
     public void destroy() {
         colorImage.destroy();
         depthImage.destroy();
+        if (sourceFbo != 0) {
+            glDeleteFramebuffers(sourceFbo);
+            sourceFbo = 0;
+        }
         if (vkDoneSemaphore != 0) {
             glDeleteSemaphoresEXT(vkDoneSemaphore);
             vkDoneSemaphore = 0;
@@ -299,6 +340,10 @@ public final class GlInterop {
             try {
                 drainStaleGlErrors();
                 memoryObject = glCreateMemoryObjectsEXT();
+                // Each exported interop image owns its allocation. The import
+                // needs that metadata to reproduce Vulkan's image layout.
+                glMemoryObjectParameterivEXT(
+                        memoryObject, GL_DEDICATED_MEMORY_OBJECT_EXT, new int[]{GL_TRUE});
                 glImportMemoryWin32HandleEXT(
                         memoryObject,
                         allocationSize,

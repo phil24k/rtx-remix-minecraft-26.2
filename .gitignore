@@ -82,6 +82,7 @@ nrc_session_log.txt
 /servers.dat
 /servers.dat_old
 /options.txt
+/rtx-remix-cache/
 
 # Local credentials and machine settings
 .env

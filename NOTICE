@@ -5,3 +5,9 @@ This product includes software developed at NVIDIA CORPORATION & AFFILIATES.
 
 Third-party software distributed with this project is listed, with the
 applicable licenses, in THIRD_PARTY_NOTICES.md.
+
+This unofficial Minecraft 26.2 fork includes adapted CPU texture-mipmap code
+from quartz1216/rtx-remix-minecraft-radeon (quxomiya and contributors),
+reviewed at commit 162b31f831cffed7fc4efd5976320791dd7a9290. The original Radeon changes are preserved
+under their Apache-2.0 SPDX notices; subsequent integration changes retain
+the same license. See docs/RADEON.md and docs/SOURCE_REVIEW.md.

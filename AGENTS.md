@@ -4,7 +4,7 @@ Context for AI coding agents working in this repository.
 
 ## Project Overview
 
-`rtx-remix-minecraft` is a Fabric mod that renders Minecraft 1.21.1 through
+`rtx-remix-minecraft` is a Fabric mod that renders Minecraft 26.2 through
 NVIDIA RTX Remix. It captures terrain, entities, particles, sky, and clouds from
 the client and submits them to the Remix runtime as a path-traced scene. The
 Java facade and JNI bridge are tracked under `rtxremix-java/`; the native
@@ -27,8 +27,10 @@ subdirectory may carry its own `AGENTS.md`; read the nearest one as well.
 
 ## Build, Run, Package, Test
 
-Java 21, Windows, and the C++ toolchain are required. Gradle fetches a missing
-Remix runtime automatically. [Getting Started](docs/GETTING_STARTED.md) covers local overrides.
+Java 25 is required. Windows and the C++ toolchain are required for native
+compilation; Linux can run `./gradlew build test` without JNI or runtime staging.
+Gradle fetches a missing Remix runtime for Windows development and packaging.
+[Getting Started](docs/GETTING_STARTED.md) covers local overrides.
 
 ```powershell
 .\gradlew.bat build
@@ -44,12 +46,18 @@ reuses its normal account profile; portable Prism keeps its profile under
 owns Minecraft: Java Edition. See
 [Getting Started](docs/GETTING_STARTED.md#sign-in-to-prism).
 
-`classes` depends on `setupRuntime`, which compiles the JNI bridge, fetches a
-missing runtime, and stages it, so even `test` needs the C++ toolchain.
+On Windows, `classes` depends on `setupRuntime`, which compiles the JNI bridge,
+fetches a missing runtime, and stages it. On Linux, headless classes and tests
+omit this Windows-only dependency; running the renderer uses `linux/rtx-remix`
+with Windows Prism and Windows Java in Wine. See `docs/LINUX.md`.
 `build` leaves a lightweight JAR in `build/libs/`; `package` embeds
 the runtime and payload in `build/distributions/`. It verifies inclusion of
 every `packaging/licenses/` file and excludes Python interpreter and binding
 payloads. Staged and packaged contents must agree with `NativeExtractor`.
+`-Pgpu=radeon` excludes DLSS DLLs and adds a version suffix; the default NVIDIA
+package retains them. Java automatically enables `CpuMipTextures` for AMD/ATI
+OpenGL vendors, with `rtxremix.texture.cpuAtlasMips` as an explicit override.
+The imported source and security review are recorded in `docs/SOURCE_REVIEW.md`.
 See [Getting Started](docs/GETTING_STARTED.md) and
 [`build.gradle`](build.gradle) for the staging inventory.
 

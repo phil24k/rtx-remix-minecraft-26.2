@@ -1,11 +1,17 @@
 # RTX Remix for Minecraft 26.2 (Unofficial)
 
-A Windows x64 Fabric port of NVIDIA's Minecraft RTX Remix beta to Minecraft Java 26.2.
-It uses NVIDIA's RTX Remix runtime for path tracing, DLSS, and reflections.
+A Fabric port of NVIDIA's Minecraft RTX Remix beta to Minecraft Java 26.2.
+It uses NVIDIA's RTX Remix runtime for path tracing, upscaling, and reflections.
 
-**[Download the installable JAR - Preview 3 (Windows x64)](https://github.com/phil24k/rtx-remix-minecraft-26.2/releases/download/v0.1.0-mc26.2-preview.3/rtx-remix-renderer-0.1.0-mc26.2-202610302236-87ff072-win64.jar)**
+Preview 4 adds Radeon texture fixes and a portable Linux launch: the JAR
+carries its own Wine and Windows Java and restarts the game under them, so it
+drops into any Linux launcher with no setup. See [NVIDIA and Radeon](docs/RADEON.md),
+[Linux](docs/LINUX.md), and the [Radeon source review](docs/SOURCE_REVIEW.md).
 
-[Release notes and installation steps](https://github.com/phil24k/rtx-remix-minecraft-26.2/releases/tag/v0.1.0-mc26.2-preview.3)
+**[Download the universal JAR - Preview 4 (Windows + Linux, NVIDIA + Radeon)](https://github.com/phil24k/rtx-remix-minecraft-26.2/releases/download/v0.1.0-mc26.2-preview.4/rtx-remix-renderer-0.1.0-mc26.2-preview.4-universal.jar)**
+
+A smaller [Radeon-only JAR](https://github.com/phil24k/rtx-remix-minecraft-26.2/releases/download/v0.1.0-mc26.2-preview.4/rtx-remix-renderer-0.1.0-mc26.2-preview.4-radeon.jar)
+leaves out the DLSS libraries. [Release notes and installation steps](https://github.com/phil24k/rtx-remix-minecraft-26.2/releases/tag/v0.1.0-mc26.2-preview.4)
 
 This is an unofficial community port. NVIDIA does not maintain or support it.
 The original project is **[NVIDIA RTX Remix for Minecraft](https://github.com/NVIDIAGameWorks/rtx-remix-minecraft)**.
@@ -32,12 +38,23 @@ A separate real OpenGL pixel-readback regression passes for resized render
 targets whose texture names are reused. Live F11 switching, server labels,
 visual parity, and a full playthrough still need in-game confirmation.
 
+On Linux with a Radeon RX 7000-series GPU under Wine, the game launched, the
+renderer initialized, and a pixel probe verified the shared-image transfer
+across window resizes. The portable Linux launch (bundled Wine 11.18) passes
+its unit tests but had not completed a live game launch at release time.
+
 ## Requirements
 
 - Minecraft Java 26.2 and Java 25.
 - Fabric Loader 0.20.1 and Fabric API 0.161.0+26.2.
-- Windows x64 and an NVIDIA RTX 30-series or newer GPU.
-- NVIDIA driver 616.92 or newer.
+- Windows x64 or x86-64 Linux.
+- A ray-tracing GPU: NVIDIA RTX 30-series or newer (driver 616.92 or newer),
+  or AMD Radeon RX 7000-series or newer (Linux needs Mesa 26.1 or newer).
+- DLSS is NVIDIA on Windows only; elsewhere use TAA-U or XeSS.
+
+The Radeon path and DLSS-free package are described in
+[Radeon support](docs/RADEON.md). On Linux the renderer runs under Wine,
+which the universal and Radeon JARs bundle; see [Linux](docs/LINUX.md).
 
 Use a separate game directory. Do not combine this renderer with Sodium,
 Iris, OptiFine, or other renderer replacements. The mod selects the OpenGL
@@ -87,6 +104,20 @@ JDK, then run:
 ```powershell
 .\gradlew.bat build test package -Parch=win64
 ```
+
+Add `-Pgpu=radeon` for a Radeon package without DLSS DLLs. Omit it or use
+`-Pgpu=nvidia` for the NVIDIA package. The Java code automatically selects the
+AMD mipmap workaround in either build.
+
+On Linux, Java compilation and headless tests are available with JDK 25:
+
+```bash
+./gradlew build test
+python3 -m unittest discover -s linux -p 'test_*.py' -v
+```
+
+These Linux build tasks produce a lightweight development JAR. Complete native
+packages still require the Windows build or matching staged published binaries.
 
 The packaged JAR is under build/distributions. The lightweight JAR under
 build/libs does not include the native runtime and is not a standalone install.

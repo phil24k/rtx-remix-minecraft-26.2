@@ -9,6 +9,9 @@
         "yeezybeezydeezy (community 26.3 port)",
         "Phil24k (26.2 fork)"
     ],
+    "contributors": [
+        "quartz1216 / quxomiya (Radeon CPU texture mipmaps)"
+    ],
     "contact": {
         "homepage": "https://github.com/phil24k/rtx-remix-minecraft-26.2",
         "sources": "https://github.com/phil24k/rtx-remix-minecraft-26.2",
@@ -18,6 +21,7 @@
     "environment": "*",
     "entrypoints": {
         "preLaunch": [
+            "com.nvidia.rtxremix.minecraft.linux.LinuxWineLauncher",
             "com.nvidia.rtxremix.minecraft.WorkerPoolCap"
         ],
         "main": [

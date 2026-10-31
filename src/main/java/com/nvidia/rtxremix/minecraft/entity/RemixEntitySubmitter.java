@@ -5,6 +5,7 @@
 package com.nvidia.rtxremix.minecraft.entity;
 
 import com.nvidia.rtxremix.minecraft.util.DirectBufferPool;
+import com.nvidia.rtxremix.minecraft.texture.CpuMipTextures;
 import com.nvidia.rtxremix.minecraft.texture.ParticleAtlasManager;
 import com.nvidia.rtxremix.minecraft.texture.LabPBRConverter;
 import com.nvidia.rtxremix.minecraft.texture.DynamicTextureCache;
@@ -2447,8 +2448,9 @@ public class RemixEntitySubmitter {
         EntityTextureSet textures = textureSets.get(textureId);
         if (textures == null || textures.albedo == null || textures.albedo.isDeleted()) return;
 
-        if (textures.hasPBR) {
+        if (textures.hasPBR || textures.albedo.isFileBacked()) {
             // AO and emissive are derived from albedo; rebuild the complete set.
+            // A file-backed albedo carries CPU mips that a patch would leave stale.
             invalidateMaterialTexture(textureId);
             return;
         }
@@ -2743,6 +2745,8 @@ public class RemixEntitySubmitter {
     }
 
     private RemixTexture uploadPixels(String name, byte[] data, int w, int h, int format, int purpose) {
+        RemixTexture fileBacked = CpuMipTextures.create("entity", name, data, w, h, format, purpose);
+        if (fileBacked != null) return fileBacked;
         ByteBuffer buf = DirectBufferPool.acquire(data.length);
         buf.put(data).flip();
         try {

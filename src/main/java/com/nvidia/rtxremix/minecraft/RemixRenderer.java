@@ -4,6 +4,8 @@
  */
 package com.nvidia.rtxremix.minecraft;
 
+import com.mojang.blaze3d.opengl.GlTexture;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.nvidia.rtxremix.CameraInfo;
 import com.nvidia.rtxremix.CameraInfoParameterizedEXT;
@@ -110,6 +112,8 @@ public class RemixRenderer {
     private long windowHandle;
     
     private GlInterop interopGlVk = null;
+    /** The frame texture Minecraft is about to present; consumed by the next present. */
+    private GpuTextureView presentSource;
     
     private boolean submitFrameCalled = false;
     private boolean presentFailureLogged = false;
@@ -1391,11 +1395,24 @@ public class RemixRenderer {
         InteropInfo interopInfo = remixApi.dxvkGetInteropInfo();
         interopGlVk.recreateImagesIf(interopInfo);
 
-        int srcFbo = 0; // 0 is a default framebuffer
-        interopGlVk.copyFromFramebuffer(srcFbo);
+        GpuTextureView source = presentSource;
+        presentSource = null;
+        if (source != null && !source.isClosed() && source.texture() instanceof GlTexture texture) {
+            interopGlVk.copyFromTexture(texture.glId(), source.getWidth(0), source.getHeight(0));
+        } else {
+            interopGlVk.copyFromFramebuffer(0); // 0 is the default framebuffer
+        }
 
         // signal that GL is done copying, so VK can read the image and present
         interopGlVk.signalDone();
+    }
+
+    /**
+     * Records the texture Minecraft blits to the window this frame, so the present copies
+     * the frame from it rather than from the default framebuffer. Render thread only.
+     */
+    public void setPresentSource(GpuTextureView source) {
+        presentSource = source;
     }
 
     /** The GL side of the Remix interop, or null before the renderer initializes. */

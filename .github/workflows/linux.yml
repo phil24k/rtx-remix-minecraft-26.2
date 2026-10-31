@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Linux launcher
+
+on:
+  pull_request:
+  push:
+    branches: [main, "port/26.2", linux-wine-support]
+
+permissions:
+  contents: read
+
+jobs:
+  launcher:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test Linux launch preparation
+        run: python3 -m unittest discover -s linux -p 'test_*.py' -v
+      - name: Check executable entry point
+        run: ./linux/rtx-remix --help
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "25"
+      - name: Compile and test Java without the Windows runtime
+        run: ./gradlew build test --no-daemon

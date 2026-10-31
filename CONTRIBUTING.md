@@ -266,10 +266,14 @@ in injection annotations. Remove the diagnostic flag and export afterwards.
 
 The suite covers JVM-side behavior and data contracts.
 
+On Linux, use JDK 25 and `./gradlew build test`. That headless path omits
+Windows native compilation and runtime staging. Test the experimental Wine
+entry point with `python3 -m unittest discover -s linux -p 'test_*.py' -v`.
+
 It does not cross the JNI boundary and it does not render, so it cannot tell you
-that a change looks right. Two things follow. First, `test` still needs the C++
-toolchain, because every task that reaches `classes` builds the bridge and
-fetches and stages a missing runtime first. Second, a rendering change is not
+that a change looks right. Two things follow. First, on Windows `test` still
+needs the C++ toolchain, because `classes` builds the bridge and stages a
+missing runtime first. Second, a rendering change is not
 reviewed until someone has looked at it in a running game: build and launch it
 with `tools\rtx.bat launch`, and say in the pull request what you looked at and
 what you saw. Screenshots of the before and after, taken from the same

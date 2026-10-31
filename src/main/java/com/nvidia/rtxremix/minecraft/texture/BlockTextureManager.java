@@ -492,23 +492,23 @@ public class BlockTextureManager {
             AtlasPadding.extend(sssAlbedoAtlas, atlasW, se.pixX, se.pixY, se.pixW, se.pixH, se.padding, 4);
         }
 
-        atlasAlbedo = upload(api, "atlas_albedo", albedoRGBA, atlasW, atlasH,
+        atlasAlbedo = uploadWithCpuMips(api, "atlas_albedo", albedoRGBA, atlasW, atlasH,
                 TextureFormat.RGBA8_UNORM, TexturePurpose.COLOR);
 
-        RemixTexture normalTex    = hasAnyNormal ? upload(api, "atlas_normal", normalAtlas, atlasW, atlasH,
+        RemixTexture normalTex    = hasAnyNormal ? uploadWithCpuMips(api, "atlas_normal", normalAtlas, atlasW, atlasH,
                 TextureFormat.RGBA8_UNORM, TexturePurpose.NORMAL_DX) : null;
-        RemixTexture heightTex    = hasAnyHeight ? upload(api, "atlas_height", heightAtlas, atlasW, atlasH,
+        RemixTexture heightTex    = hasAnyHeight ? uploadWithCpuMips(api, "atlas_height", heightAtlas, atlasW, atlasH,
                 TextureFormat.R8_UNORM, TexturePurpose.HEIGHTMAP) : null;
-        RemixTexture roughnessTex = upload(api, "atlas_roughness", roughnessAtlas, atlasW, atlasH,
+        RemixTexture roughnessTex = uploadWithCpuMips(api, "atlas_roughness", roughnessAtlas, atlasW, atlasH,
                 TextureFormat.R8_UNORM, TexturePurpose.DATA);
-        RemixTexture metallicTex  = upload(api, "atlas_metallic", metallicAtlas, atlasW, atlasH,
+        RemixTexture metallicTex  = uploadWithCpuMips(api, "atlas_metallic", metallicAtlas, atlasW, atlasH,
                 TextureFormat.R8_UNORM, TexturePurpose.DATA);
-        RemixTexture emissiveTex  = hasAnyEmissive ? upload(api, "atlas_emissive", emissiveAtlas, atlasW, atlasH,
+        RemixTexture emissiveTex  = hasAnyEmissive ? uploadWithCpuMips(api, "atlas_emissive", emissiveAtlas, atlasW, atlasH,
                 TextureFormat.RGBA8_UNORM, TexturePurpose.COLOR) : null;
         atlasEmissive = emissiveTex;
-        RemixTexture sssTex       = hasAnySSS ? upload(api, "atlas_sss", sssThicknessAtlas, atlasW, atlasH,
+        RemixTexture sssTex       = hasAnySSS ? uploadWithCpuMips(api, "atlas_sss", sssThicknessAtlas, atlasW, atlasH,
                 TextureFormat.RGBA8_UNORM, TexturePurpose.DATA) : null;
-        RemixTexture sssAlbedoTex = hasAnySSS ? upload(api, "atlas_sss_albedo",
+        RemixTexture sssAlbedoTex = hasAnySSS ? uploadWithCpuMips(api, "atlas_sss_albedo",
                 sssAlbedoAtlas, atlasW, atlasH, TextureFormat.RGBA8_UNORM, TexturePurpose.DATA) : null;
         atlasNormalTex = normalTex;
         atlasHeightTex = heightTex;
@@ -1260,6 +1260,21 @@ public class BlockTextureManager {
     // ====================================================================
     //  Upload helper
     // ====================================================================
+
+    /**
+     * Uploads an atlas through a DDS file that carries a CPU-built mip chain
+     * ({@link CpuMipTextures}), falling back to {@link #upload} when that is
+     * switched off or fails.
+     */
+    private RemixTexture uploadWithCpuMips(RemixAPI api, String name, byte[] data, int w, int h,
+                                           int fmt, int purpose) {
+        RemixTexture tex = CpuMipTextures.create("atlas", name, data, w, h, fmt, purpose);
+        if (tex == null) {
+            return upload(api, name, data, w, h, fmt, purpose);
+        }
+        managedTextures.add(tex);
+        return tex;
+    }
 
     private RemixTexture upload(RemixAPI api, String name, byte[] data, int w, int h, int fmt, int purpose) {
         ByteBuffer buf = DirectBufferPool.acquire(data.length);

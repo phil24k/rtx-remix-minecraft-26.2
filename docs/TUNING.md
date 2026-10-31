@@ -7,6 +7,11 @@ a development launch get, and the files the mod owns in the game directory.
 None of this is needed to play. Everything a player should change is in the
 in-game settings screen, described in [Settings](SETTINGS.md).
 
+The Radeon mipmap workaround is automatic for AMD/ATI OpenGL vendors.
+`-Drtxremix.texture.cpuAtlasMips=true` forces CPU-built DDS mips;
+`false` restores runtime GPU mip generation. NVIDIA keeps GPU mips by default.
+See [NVIDIA and Radeon](RADEON.md) for the texture cache and animation limits.
+
 ## How To Set A Property
 
 Properties below are read at startup or first use; some are read again later.

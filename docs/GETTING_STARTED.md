@@ -5,8 +5,10 @@ How to build and run the mod from source. If you only want to play, read
 
 ## Prerequisites
 
-- **Windows 10 or 11**, on x64 or ARM64. The JNI bridge is compiled with MSVC,
-  so there is no Linux or macOS build.
+- **Windows 10 or 11**, on x64 or ARM64, for the native bridge and full native
+  build. Linux can compile the Java mod and run headless tests with
+  `./gradlew build test`; running the renderer uses the experimental
+  [Wine route](LINUX.md). No native Linux or macOS renderer is supplied.
 - **Java 25**, a JDK matching your machine's architecture. Eclipse Adoptium is
   a good choice. Set `JAVA_HOME` to that JDK: the native build reads it to find
   `jni.h`. Prism runs Minecraft 26.2 only on Java 25, not a newer version,
@@ -23,7 +25,10 @@ How to build and run the mod from source. If you only want to play, read
   [uv](https://docs.astral.sh/uv/) for your user when it is missing, and uv
   downloads Python 3.15 when no such Python is installed, so that first
   command needs network access.
-- **An NVIDIA RTX GPU**, 30-series or newer, to run what you build.
+- **An NVIDIA RTX GPU**, 30-series or newer, for the existing supported path.
+  The [Radeon integration](RADEON.md) provides a separate packaging target and
+  automatic AMD texture workaround; this 26.2 integration still needs a live
+  Radeon rendering test.
 - **Prism Launcher 9.0 or newer, signed in to a Microsoft account that owns
   Minecraft: Java Edition**, to launch what you build. Install it from
   [prismlauncher.org](https://prismlauncher.org); the developer tools never
@@ -265,13 +270,14 @@ Fabric API, drop it into the instance's `mods` folder; nothing else is needed.
 The release archive's installer also migrates old generated baseline packs and
 preserves user-pack ordering.
 
-Every task that reaches `classes` runs `setupRuntime` first, which compiles the
+On Windows, every task that reaches `classes` runs `setupRuntime` first, which compiles the
 bridge and stages the runtime. `test` and `build` therefore need a staged
 runtime and the C++ toolchain just as `tools\rtx.bat launch` does.
 `setupRuntime` also syncs a full copy of the runtime, PDBs included, with the
 bridge, `rtx.conf`, the gameplay conf payload, and the runtime textures into
 `run/`, the game directory of Gradle's `runClient` task, so every build
-refreshes it. The developer tools' Prism launches use `run-prism\` instead.
+refreshes it. Linux headless compilation and tests omit this staging dependency.
+The developer tools' Prism launches use `run-prism\` instead.
 
 `build` produces a lightweight JAR that is not installable on its own.
 `package` embeds the runtime, `rtx.conf`, the gameplay conf payload, and the

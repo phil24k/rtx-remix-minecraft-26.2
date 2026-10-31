@@ -217,6 +217,11 @@ public class ParticleAtlasManager {
     public boolean isInitialized()     { return initialized; }
 
     private RemixTexture uploadTexture(String name, byte[] data, int w, int h, int fmt, int purpose) {
+        RemixTexture fileBacked = CpuMipTextures.create("particle", name, data, w, h, fmt, purpose);
+        if (fileBacked != null) {
+            managedTextures.add(fileBacked);
+            return fileBacked;
+        }
         ByteBuffer buf = DirectBufferPool.acquire(data.length);
         buf.put(data).flip();
         try {
